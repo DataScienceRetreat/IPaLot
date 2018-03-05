@@ -45,7 +45,7 @@ class Car_handler():
             
             # create parking spot and save target positions
             self.target_positions.append(
-                    Populator(self.static_cars_group, car))
+                    Get_spot(self.static_cars_group, car))
             
         # add each car to the colliding group of the other cars 
         for i in range(n):
@@ -57,7 +57,7 @@ class Car_handler():
                     
 #------------------------------------------------------------------------------
 
-def Populator(spritegroup, car):
+def Get_spot(spritegroup, car):
     """
     Create a parking spot for car, return its pseudo-wheel target positions,
     and add the static cars created around the spot to the spritegroup
