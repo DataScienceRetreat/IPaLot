@@ -16,7 +16,7 @@ output:
 
 import pygame
 import random
-import static_car
+from Cars import Static_car
 import math
 
 def populator(spritegroup, car ):
@@ -47,8 +47,8 @@ def populator(spritegroup, car ):
         position1 = ( x + math.floor(1.2*carw), y  )
         position2 = ( x - math.floor(1.2*carw), y  )
         
-    car1 = static_car.Static_car( position1, vertical=Vertical)
-    car2 = static_car.Static_car( position2, vertical=Vertical) 
+    car1 = Static_car( position1, vertical=Vertical)
+    car2 = Static_car( position2, vertical=Vertical) 
     spritegroup.add( car1 )
     spritegroup.add( car2 )
     

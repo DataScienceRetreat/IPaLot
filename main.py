@@ -7,7 +7,7 @@ Created on Sat Feb 10 13:26:37 2018
 
 import pygame
 from pygame.locals import *
-import moving_car
+from Cars import Car
 from populator import populator
 
 def main():
@@ -25,7 +25,7 @@ def main():
     background.fill(color)
     
     #initialize objects
-    car = moving_car.Car()
+    car = Car()
     player_s  = pygame.sprite.Group()
     player_s.add(car)
     
