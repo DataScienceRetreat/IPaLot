@@ -29,10 +29,8 @@ def main():
 
 
 # Initialize car objects
-    manager = Car_handler(1)
+    manager = Car_handler(4)
     car = manager.moving_cars[0]
-    
-
 
         
     # Event loop

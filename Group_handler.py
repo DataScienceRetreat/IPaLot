@@ -68,16 +68,28 @@ def Get_spot(spritegroup, car):
     screenw = pygame.display.Info().current_w
     screenh = pygame.display.Info().current_h
     
+    # sin,cos are used for pseudowheels below
     if Vertical:
+        sin = 1
+        cos = 0
         carw = car.rect.w
-        carh = car.rect.h       
+        carh = car.rect.h
     else:
+        sin = 0
+        cos = 1
         carw = car.rect.h
         carh = car.rect.w
     
     #generate random position of the spot
     x = random.randint( 3*carw, screenw - 3*carw )
     y = random.randint( 3*carh, screenh - 3*carh )
+    
+    #calculate target pseudo-wheels positions
+    frontwheel_x = x + 0.5*car.wheelbase * cos
+    frontwheel_y = y + 0.5*car.wheelbase * sin
+        
+    rearwheel_x = x - 0.5*car.wheelbase * cos
+    rearwheel_y = y - 0.5*car.wheelbase * sin
     
     #get position of neighbour cars and add to sprite group
     align_y = random.choice([True,False])
@@ -93,7 +105,7 @@ def Get_spot(spritegroup, car):
     spritegroup.add( car1 )
     spritegroup.add( car2 )
     
-    return
+    return ([frontwheel_x, frontwheel_y], [rearwheel_x, rearwheel_y])
     
     
     
