@@ -28,9 +28,11 @@ import pygame
 from loader import load_image
 import math
 
-## NOTE: I'll keep y negative (standard xy axis, y goes up)
-## to facilitate the geometry calculations, then using -y when
-## feeding into rect (imgage xy, y goes down):  rect.y = - self.y
+"""
+NOTE: I'll keep y negative (standard xy axis, y goes up)
+to facilitate the geometry calculations, then use -y when
+feeding into rect (imgage xy, y goes down):  rect.y = - self.y
+"""
 
 class Car(pygame.sprite.Sprite):
     def __init__(self, wheelbase = None):
@@ -134,7 +136,7 @@ def rot_center(image, rect, angle):
         return rot_image,rot_rect        
         
         
-        
+#------------------------------------------------------------------------------        
         
         
 class Static_car(pygame.sprite.Sprite):

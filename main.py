@@ -6,13 +6,12 @@ Created on Sat Feb 10 13:26:37 2018
 """
 
 import pygame
-from pygame.locals import *
-from Cars import Car
-from populator import populator
+from pygame.locals import QUIT, K_LEFT, K_RIGHT, K_UP, K_DOWN
+from Group_handler import Car_handler
 
 def main():
     
-    # Initialise screen
+# Initialise screen
     size = width, height = 700, 700
     pygame.init()
     screen = pygame.display.set_mode(size)
@@ -24,18 +23,16 @@ def main():
     color = (50, 50, 50)
     background.fill(color)
     
-    #initialize objects
-    car = Car()
-    player_s  = pygame.sprite.Group()
-    player_s.add(car)
-    
-    static_cars_s = pygame.sprite.Group()
-    populator(static_cars_s, car)
-    
-    
     # Blit everything to the screen
     screen.blit(background, (0, 0))
     pygame.display.flip()
+
+
+# Initialize car objects
+    manager = Car_handler(1)
+    car = manager.moving_cars[0]
+    
+
 
         
     # Event loop
@@ -71,7 +68,10 @@ def main():
         if car.rect.top < 0 or car.rect.bottom > height:
             car.speed = - car.speed                  
         
-        if pygame.sprite.spritecollide(car, static_cars_s, False, pygame.sprite.collide_mask):
+        if pygame.sprite.spritecollide(car,
+                                       manager.static_cars_group,
+                                       False,
+                                       pygame.sprite.collide_mask):
             car.impact()
 
         car.update()        
@@ -79,8 +79,8 @@ def main():
         #render
        
         screen.blit(background, (0, 0))
-        player_s.draw(screen)
-        static_cars_s.draw(screen)
+        manager.moving_cars_group.draw(screen)
+        manager.static_cars_group.draw(screen)
         
 #        #test subfigure for training
 #        reduced = pygame.transform.scale(
