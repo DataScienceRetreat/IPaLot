@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Feb 10 13:53:42 2018
-@author: orlando ciricosta
+@author: Orlando Ciricosta
 
 class Car(pygame.sprite.Sprite):
     Provides the controllable object car: the controller can be whoever 

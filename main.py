@@ -2,7 +2,7 @@
 """
 Created on Sat Feb 10 13:26:37 2018
 
-@author: orlando
+@author: Orlando Ciricosta
 """
 
 import pygame
@@ -20,14 +20,10 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('Basic parking traing')
-    
-    # Fill background
     background = pygame.Surface(screen.get_size())
     background = background.convert()
     color = (50, 50, 50)
     background.fill(color)
-    
-    # Blit everything to the screen
     screen.blit(background, (0, 0))
     pygame.display.flip()
 
@@ -37,7 +33,7 @@ def main():
     car = manager.moving_cars[0]
 
         
-    # Event loop
+# Event loop
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
