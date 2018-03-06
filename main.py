@@ -9,6 +9,10 @@ import pygame
 from pygame.locals import QUIT, K_LEFT, K_RIGHT, K_UP, K_DOWN
 from Group_handler import Car_handler
 
+# number of moving cars
+N_CARS = 4
+
+
 def main():
     
 # Initialise screen
@@ -29,7 +33,7 @@ def main():
 
 
 # Initialize car objects
-    manager = Car_handler(4)
+    manager = Car_handler(N_CARS)
     car = manager.moving_cars[0]
 
         

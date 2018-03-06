@@ -8,7 +8,7 @@ class Car_handler(n):
     sprite group of remaing moving cars to collide with. Moving and static
     also have dedicated sprite groups
     
-def Populator(spritegroup, car):
+def Get_spot(spritegroup, car):
     Create a parking spot for car, return its pseudo-wheel target positions,
     and add the static cars created around the spot to the spritegroup
 
@@ -37,7 +37,12 @@ class Car_handler():
         self.moving_cars_group = pygame.sprite.Group()
 
         for i in range(n):
-            self.moving_cars.append(Car())
+            # cars will be at bottom of screen (assume car shorter than 90)
+            car_position = (
+                    (i+1) * pygame.display.Info().current_w // (n+1),
+                    - pygame.display.Info().current_h + 45
+                    )            
+            self.moving_cars.append( Car(pos=car_position) )
             self.collide_with.append(pygame.sprite.Group())
             
             car = self.moving_cars[i]

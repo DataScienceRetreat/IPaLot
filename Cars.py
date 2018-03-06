@@ -35,15 +35,20 @@ feeding into rect (imgage xy, y goes down):  rect.y = - self.y
 """
 
 class Car(pygame.sprite.Sprite):
-    def __init__(self, wheelbase = None):
+    def __init__(self, pos = None, wheelbase = None):
         pygame.sprite.Sprite.__init__(self)
         self.image = load_image('car_player.png')
         self.rect = self.image.get_rect()
         self.image_orig = self.image
         self.screen = pygame.display.get_surface()
         self.area = self.screen.get_rect()
-        self.x = pygame.display.Info().current_w //2
-        self.y =  - pygame.display.Info().current_h //2
+        
+        if pos:
+            self.x, self.y = pos
+        else:
+            self.x = pygame.display.Info().current_w //2
+            self.y =  - pygame.display.Info().current_h //2
+            
         self.rect.center = self.x, - self.y
         self.dir = 90 # degrees with respect to x axis
         self.speed = 0.0
