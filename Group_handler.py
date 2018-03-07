@@ -58,7 +58,13 @@ class Car_handler():
             for j in range(n):
                 if j != i:
                     self.collide_with[i].add(self.moving_cars[j])
-
+                    
+                    
+    def reset_car(self, i):
+        self.moving_cars[i].reset(pos=(
+            (i+1) * pygame.display.Info().current_w // (self.number_of_cars+1),
+            - pygame.display.Info().current_h + 45)
+            )
               
                     
 #------------------------------------------------------------------------------

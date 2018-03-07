@@ -9,7 +9,7 @@ import pygame
 from pygame.locals import QUIT, K_LEFT, K_RIGHT, K_UP, K_DOWN
 from Group_handler import Car_handler
 
-# number of moving cars
+# number of moving cars per episode
 N_CARS = 4
 
 
@@ -71,6 +71,7 @@ def main():
                                        False,
                                        pygame.sprite.collide_mask):
             car.impact()
+            manager.reset_car(0)
 
         car.update()        
             

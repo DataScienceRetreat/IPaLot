@@ -3,7 +3,7 @@
 Created on Sat Feb 10 13:53:42 2018
 @author: Orlando Ciricosta
 
-class Car(pygame.sprite.Sprite):
+class Car(pygame.sprite.Sprite, pos=position, wheelbase=wb):
     Provides the controllable object car: the controller can be whoever 
     calls the acceleration\steering methods, either human or AI. The calls
     for human control are in the main loop
@@ -61,9 +61,18 @@ class Car(pygame.sprite.Sprite):
 
         self.mask = pygame.mask.from_surface(self.image) #for collisions
 
-        
-    def reset(self):
-        pass
+    #bring car to initial position and speed    
+    def reset(self, pos=None):
+        if pos:
+            self.x, self.y = pos
+        else:
+            self.x = pygame.display.Info().current_w //2
+            self.y =  - pygame.display.Info().current_h //2
+
+        self.rect.center = self.x, - self.y
+        self.dir = 90
+        self.speed = 0.0
+        self.steer_angle = 0.0
 
     #Accelerate the vehicle
     def accelerate(self):
