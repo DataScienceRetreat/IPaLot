@@ -146,17 +146,17 @@ class Car(pygame.sprite.Sprite):
         frontwheel_x = self.x + 0.5*self.wheelbase * math.cos(math.radians(self.dir))
         frontwheel_y = self.y + 0.5*self.wheelbase * math.sin(math.radians(self.dir))
         if negative_y:
-            return frontwheel_x, frontwheel_y
+            return frontwheel_x, frontwheel_y # class xy system
         else:
-            return frontwheel_x, - frontwheel_y # for external calls
+            return frontwheel_x, - frontwheel_y # image xy system
     
     def get_rearwheel(self, negative_y = True):
         rearwheel_x = self.x - 0.5*self.wheelbase * math.cos(math.radians(self.dir))
         rearwheel_y = self.y - 0.5*self.wheelbase * math.sin(math.radians(self.dir))
         if negative_y:
-            return rearwheel_x, rearwheel_y        
+            return rearwheel_x, rearwheel_y # class xy system       
         else:
-            return rearwheel_x, - rearwheel_y
+            return rearwheel_x, - rearwheel_y # image xy system
 
 #------------------------------------------------------------------------------
         
@@ -172,6 +172,12 @@ def rot_center(image, rect, angle):
         
         
 class Static_car(pygame.sprite.Sprite):
+    ''' NOTE: in contrast with the moving car, the static car keeps the
+        xy system of the screen (no negative y): because of this the y of the
+        pseudowheels in get_pseudowheels have different signs
+        than the ones used in the corresponding methods for the moving car
+        class ''' 
+    
     def __init__(self, position, vertical=True):
         pygame.sprite.Sprite.__init__(self)
         self.image = load_image('car6_yellow.png')
@@ -179,6 +185,8 @@ class Static_car(pygame.sprite.Sprite):
         self.screen = pygame.display.get_surface()
         self.area = self.screen.get_rect()
         self.rect.center = position
+        self.is_vertical = vertical
+        self.x, self.y = position
 
         
         if not vertical:
@@ -187,7 +195,24 @@ class Static_car(pygame.sprite.Sprite):
 
         self.mask = pygame.mask.from_surface(self.image) #for collisions        
         
+    def get_pseudowheels(self, car):
+        ''' Returns the pseudowheels positions of a car
+        occupying the same positions as self. The reason for passing
+        car as an argument is that car may have a different wheelbase '''
         
+        wheelbase = car.wheelbase
+        if self.is_vertical:
+            sin = 1
+            cos = 0
+        else:
+            sin = 0
+            cos = 1
+            
+        frontwheel_x = round(self.x + 0.5*wheelbase * cos)
+        frontwheel_y = round(self.y - 0.5*wheelbase * sin)
         
+        rearwheel_x = round(self.x - 0.5*wheelbase * cos)
+        rearwheel_y = round(self.y + 0.5*wheelbase * sin)
         
+        return ((frontwheel_x, frontwheel_y), (rearwheel_x, rearwheel_y)) 
         

@@ -18,6 +18,7 @@ class Filled_Lot(car_group):
 
 import pygame
 from Cars import Car, Static_car
+import random
 
 # size of the image to be passed to the neural network for training
 NN_img_size = (70,70)
@@ -39,10 +40,19 @@ class Car_handler():
         self.target_positions = []      
         self.static_cars_group = pygame.sprite.Group()
         self.moving_cars_group = pygame.sprite.Group()
-        self.spot_rects = [] # used to avoid overlap of spots
         self.lot = Filled_Lot(self.static_cars_group)
-
-        for i in range(n):
+        
+        # now sample n indexes in len(lot.static_cars_list) in order to
+        # create the target parking spots (Get_spot in the following loop)
+        # and add the remaining static cars to the sprite group for
+        # collision/rendering
+        index = random.sample(range(len(self.lot.static_cars_list)), n)
+        for i in range(len(self.lot.static_cars_list)):
+            if i not in index:
+                self.static_cars_group.add( self.lot.static_cars_list[i] )
+                
+        # and set the moving cars
+        for i in range(self.number_of_cars):
             # cars will be at bottom of screen
             car_position = (
                     (i+1) * pygame.display.Info().current_w // (n+1),
@@ -56,8 +66,7 @@ class Car_handler():
             
             # create parking spot and save target positions
             self.target_positions.append(
-                    self.lot.Get_spot(self.static_cars_group,
-                                      car, self.spot_rects)
+                    self.lot.Get_spot(car, index[i])
                     )
             
         # add each car to the colliding group of the other cars 
@@ -81,79 +90,6 @@ class Car_handler():
         a convolution with few filters will scan the 4-uples for moving/static
         """
         pass
-                    
-#------------------------------------------------------------------------------
-
-#def Get_spot(spritegroup, car, rectlist):
-#    """
-#    Create a parking spot for car, return its pseudo-wheel target positions,
-#    and add the static cars created around the spot to the spritegroup
-#    """
-#    #pick random orientation of spot
-#    Vertical = random.choice([True,False])
-#    
-#    screenw = pygame.display.Info().current_w
-#    screenh = pygame.display.Info().current_h
-#    
-#    # sin,cos are used for pseudowheels below
-#    if Vertical:
-#        sin = 1
-#        cos = 0
-#        carw = car.rect.w
-#        carh = car.rect.h
-#    else:
-#        sin = 0
-#        cos = 1
-#        carw = car.rect.h
-#        carh = car.rect.w
-#    
-#    # check if random position of the spot is valid   
-#    overlap_check = True
-#    while overlap_check:
-#    
-#        #generate random position of the spot
-#        x = random.randint( 3*carw, screenw - 3*carw )
-#        y = random.randint( 3*carh, screenh - 3*carh )
-#        
-#        #get position of neighbour cars and add to sprite group
-#        align_y = random.choice([True,False])
-#        if align_y:
-#            position1 = ( x , y + math.floor(1.22*carh) )
-#            position2 = ( x , y - math.floor(1.22*carh) )
-#        else:
-#            position1 = ( x + math.floor(1.22*carw), y  )
-#            position2 = ( x - math.floor(1.22*carw), y  )
-#            
-#    
-#        car1 = Static_car( position1, vertical=Vertical)
-#        car2 = Static_car( position2, vertical=Vertical)
-#        current_rect = pygame.Rect.union(car1.rect, car2.rect)
-#
-#        if not rectlist:
-#            rectlist.append(current_rect)
-#            overlap_check = False
-#        else:
-#            collision_detected = False
-#            for rect in rectlist:
-#                if pygame.Rect.colliderect(current_rect, rect):
-#                    collision_detected = True
-#                    break
-#            if not collision_detected:
-#                rectlist.append(current_rect)
-#                overlap_check = False
-#
-#    spritegroup.add( car1 )
-#    spritegroup.add( car2 )
-#    
-#    
-#    #calculate target pseudo-wheels positions
-#    frontwheel_x = x + 0.5*car.wheelbase * cos
-#    frontwheel_y = y + 0.5*car.wheelbase * sin
-#        
-#    rearwheel_x = x - 0.5*car.wheelbase * cos
-#    rearwheel_y = y - 0.5*car.wheelbase * sin
-#    
-#    return ((frontwheel_x, frontwheel_y), (rearwheel_x, rearwheel_y)) 
     
 #------------------------------------------------------------------------------
 
@@ -198,8 +134,8 @@ class Filled_Lot():
             # then for the bottom row
             car1 = Static_car( (x + dx ,y + 1.1*h) )
             car2 = Static_car( (x - dx ,y + 1.1*h) )
-                # DO NOT add cars in the list to the collider group now
-                # as they may be removed when assigning free spots
+            ''' DO NOT add cars in the list to the collider group now
+                as they may be removed when assigning free spots '''
             self.static_cars_list.append(car1)
             self.static_cars_list.append(car2)
             # then for the upper row, with horizontal cars
@@ -212,10 +148,12 @@ class Filled_Lot():
             dx += delta
             
             
-    def Get_spot(self, sprite_group, moving_car, rectlist):     
-        for car in self.static_cars_list:
-            sprite_group.add(car)        
-        return ((1,2), (3,4))
+    def Get_spot(self, car, index):
+        """ Create a parking spot for car and return its pseudo-wheel
+        target positions """
+        
+        spot = self.static_cars_list[index]
+        return spot.get_pseudowheels(car)
     
     
     

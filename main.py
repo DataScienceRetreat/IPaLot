@@ -85,6 +85,14 @@ def main():
         screen.blit(background, (0, 0))
         manager.moving_cars_group.draw(screen)
         manager.static_cars_group.draw(screen)
+        # test the target positions by rendering them
+        for i in range(N_CARS):
+            pygame.draw.circle(screen, (250,250,250),
+                               manager.target_positions[i][0], 5
+                               )
+            pygame.draw.circle(screen, (250,250,250),
+                               manager.target_positions[i][1], 5
+                               )
 
         pygame.display.flip()
         
