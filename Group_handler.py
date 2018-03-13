@@ -4,9 +4,12 @@ Created on Mon Mar 5 13:54:37 2018
 @author: Orlando Ciricosta
 
 class Car_handler(n):
-    returns n moving cars, each having a target parking spot and a
+    returns n moving cars, each having a stack of target positions and a
     sprite group of remaing moving cars to collide with. Moving and static
     also have dedicated sprite groups
+
+        self.target_positions[i] = [exit, intermediate target, .. ,
+                                    initial target]
     
 class Filled_Lot(car_group):
     Creates a filled parking lot at the center of the screen. N_cars will
@@ -28,16 +31,24 @@ FROM_BOTTOM = 45
 class Car_handler():
     """
     class Car_handler(n):
-        returns n moving cars, each having a target parking spot and a
+        returns n moving cars, each having a stack of target positions and a
         sprite group of remaing moving cars to collide with. Moving and static
         also have dedicated sprite groups
+        
+        self.target_positions[i] = [exit, intermediate target, .. ,
+                                    initial target]
+        
     """  
     def __init__(self, n):
         
         self.number_of_cars = n
         self.moving_cars = []
         self.collide_with = []
-        self.target_positions = []      
+        self.target_positions = []  # list of stacks of target positions
+
+        self.current_target = []  # these two list the current starting point
+        self.current_origin = [] # and target point for each car
+
         self.static_cars_group = pygame.sprite.Group()
         self.moving_cars_group = pygame.sprite.Group()
         self.lot = Filled_Lot(self.static_cars_group)
@@ -53,11 +64,13 @@ class Car_handler():
                 
         # and set the moving cars
         for i in range(self.number_of_cars):
+            self.target_positions.append([])
             # cars will be at bottom of screen
             car_position = (
                     (i+1) * pygame.display.Info().current_w // (n+1),
                     - pygame.display.Info().current_h + FROM_BOTTOM
-                    )            
+                    )
+            self.current_origin.append(car_position)
             self.moving_cars.append( Car(pos=car_position) )
             self.collide_with.append(pygame.sprite.Group())
             
@@ -65,9 +78,9 @@ class Car_handler():
             self.moving_cars_group.add(car)
             
             # create parking spot and save target positions
-            self.target_positions.append(
-                    self.lot.Get_spot(car, index[i])
-                    )
+            self.lot.Get_spot(car, index[i], self.target_positions[i])
+            self.current_target.append(self.target_positions[i].pop())
+            
             
         # add each car to the colliding group of the other cars 
         for i in range(n):
@@ -116,7 +129,7 @@ class Filled_Lot():
         n = self.N//2
         
         x = pygame.display.Info().current_w //2
-        y = pygame.display.Info().current_h //2 -50
+        y = pygame.display.Info().current_h //2 -FROM_BOTTOM
         
         # get dummy car for dimensions
         car = Static_car((x,y))           
@@ -148,14 +161,35 @@ class Filled_Lot():
             dx += delta
             
             
-    def Get_spot(self, car, index):
+    def Get_spot(self, car, index, target_list):
         """ Create a parking spot for car and return its pseudo-wheel
-        target positions """
+        target positions list"""
+        
+        #first append the exit position to the empty target list
+        h = pygame.display.Info().current_h
+        exit_pos = (
+                (25, h - 25),
+                (25, h - 25 - round(car.wheelbase) )
+                )
+        target_list.append(exit_pos)
         
         spot = self.static_cars_list[index]
-        return spot.get_pseudowheels(car)
-    
-    
+        t = spot.get_pseudowheels(car)
+        # if the spot is a parallel parking one, set intermediate targets
+        # both coming in and getting out (the latter is to simulate a
+        # temporary get-out-of-the-way for releasing blocked cars)
+        w = car.rect.w
+        dx = round(w * 1.22 * 2)
+        dy = round(w * 1.22)
+        if not spot.is_vertical:
+            t_next = ( (t[0][0] - dx, t[0][1] - dy),
+                       (t[1][0] - dx, t[1][1] - dy) )
+            target_list.append(t_next)
+            
+        target_list.append(t)
+        
+        if not spot.is_vertical:       
+            target_list.append(t_next)
     
     
     

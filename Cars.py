@@ -97,10 +97,6 @@ class Car(pygame.sprite.Sprite):
     def steerright(self):
         if self.steer_angle > - MAXSTEERING:
             self.steer_angle += -STEERING
-
-#    #collision
-#    def impact(self):
-#            self.speed = -self.speed
         
     #Update the car position
     def update(self):
@@ -148,7 +144,7 @@ class Car(pygame.sprite.Sprite):
         if negative_y:
             return frontwheel_x, frontwheel_y # class xy system
         else:
-            return frontwheel_x, - frontwheel_y # image xy system
+            return round(frontwheel_x), round(- frontwheel_y) # image xy system
     
     def get_rearwheel(self, negative_y = True):
         rearwheel_x = self.x - 0.5*self.wheelbase * math.cos(math.radians(self.dir))
@@ -156,7 +152,7 @@ class Car(pygame.sprite.Sprite):
         if negative_y:
             return rearwheel_x, rearwheel_y # class xy system       
         else:
-            return rearwheel_x, - rearwheel_y # image xy system
+            return round(rearwheel_x), round(- rearwheel_y) # image xy system
 
 #------------------------------------------------------------------------------
         
@@ -208,10 +204,10 @@ class Static_car(pygame.sprite.Sprite):
             sin = 0
             cos = 1
             
-        frontwheel_x = round(self.x + 0.5*wheelbase * cos)
+        frontwheel_x = round(self.x - 0.5*wheelbase * cos)
         frontwheel_y = round(self.y - 0.5*wheelbase * sin)
         
-        rearwheel_x = round(self.x - 0.5*wheelbase * cos)
+        rearwheel_x = round(self.x + 0.5*wheelbase * cos)
         rearwheel_y = round(self.y + 0.5*wheelbase * sin)
         
         return ((frontwheel_x, frontwheel_y), (rearwheel_x, rearwheel_y)) 
