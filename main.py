@@ -15,8 +15,8 @@ N_CARS = 4
 
 def main():
     
-# Initialise screen
-    size = width, height = 700, 700
+# Initialize screen
+    size = width, height = 700, 400
     pygame.init()
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('Basic parking traing')
@@ -62,32 +62,35 @@ def main():
             car.soften()
             
         if car.rect.left < 0 or car.rect.right > width:
-            car.speed = - car.speed
+            manager.reset_car(0)
         if car.rect.top < 0 or car.rect.bottom > height:
-            car.speed = - car.speed                  
+            manager.reset_car(0)                 
         
         if pygame.sprite.spritecollide(car,
                                        manager.static_cars_group,
                                        False,
                                        pygame.sprite.collide_mask):
-            car.impact()
+            manager.reset_car(0)
+            
+        if pygame.sprite.spritecollide(car,
+                                       manager.collide_with[0],
+                                       False,
+                                       pygame.sprite.collide_mask):            
             manager.reset_car(0)
 
         car.update()        
             
-        #render
+        # render
        
         screen.blit(background, (0, 0))
         manager.moving_cars_group.draw(screen)
         manager.static_cars_group.draw(screen)
-        
-#        #test subfigure for training
-#        reduced = pygame.transform.scale(
-#                pygame.display.get_surface(), (100,100))
-#        screen.blit(reduced, (0,0))
-        
-        
+
         pygame.display.flip()
+        
+        # get 'state'
+        states = manager.get_states()
+        
 
     
 if __name__ == '__main__': main()

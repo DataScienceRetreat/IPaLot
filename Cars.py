@@ -12,6 +12,9 @@ class Static_car(pygame.sprite.Sprite):
     provides basic car objects that just seat in
     the given space to provide a collider. For training purposes
 
+def rot_center(image, rect, angle):
+    rotate an image while keeping its center
+
 """
 
 MAXSPEED = 0.4
@@ -95,19 +98,16 @@ class Car(pygame.sprite.Sprite):
         if self.steer_angle > - MAXSTEERING:
             self.steer_angle += -STEERING
 
-    #collision
-    def impact(self):
-            self.speed = -self.speed
+#    #collision
+#    def impact(self):
+#            self.speed = -self.speed
         
     #Update the car position
     def update(self):
         # first calculate the virtual wheels' position
-        frontwheel_x = self.x + 0.5*self.wheelbase * math.cos(math.radians(self.dir))
-        frontwheel_y = self.y + 0.5*self.wheelbase * math.sin(math.radians(self.dir))
-        
-        rearwheel_x = self.x - 0.5*self.wheelbase * math.cos(math.radians(self.dir))
-        rearwheel_y = self.y - 0.5*self.wheelbase * math.sin(math.radians(self.dir))
-        
+        frontwheel_x, frontwheel_y = self.get_frontwheel()
+        rearwheel_x, rearwheel_y = self.get_rearwheel()
+                
         # then move each virtual wheel in the pointing direction
         rearwheel_x += self.speed * math.cos(math.radians(self.dir))
         rearwheel_y += self.speed * math.sin(math.radians(self.dir))
@@ -140,7 +140,25 @@ class Car(pygame.sprite.Sprite):
             if self.steer_angle > 0:
                 self.steer_angle = max( 0, self.steer_angle - STEER_SOFTENING)
             if self.steer_angle < 0:
-                self.steer_angle = min( 0, self.steer_angle + STEER_SOFTENING)  
+                self.steer_angle = min( 0, self.steer_angle + STEER_SOFTENING)
+                
+    def get_frontwheel(self, negative_y = True):
+        frontwheel_x = self.x + 0.5*self.wheelbase * math.cos(math.radians(self.dir))
+        frontwheel_y = self.y + 0.5*self.wheelbase * math.sin(math.radians(self.dir))
+        if negative_y:
+            return frontwheel_x, frontwheel_y
+        else:
+            return frontwheel_x, - frontwheel_y # for external calls
+    
+    def get_rearwheel(self, negative_y = True):
+        rearwheel_x = self.x - 0.5*self.wheelbase * math.cos(math.radians(self.dir))
+        rearwheel_y = self.y - 0.5*self.wheelbase * math.sin(math.radians(self.dir))
+        if negative_y:
+            return rearwheel_x, rearwheel_y        
+        else:
+            return rearwheel_x, - rearwheel_y
+
+#------------------------------------------------------------------------------
         
 #Rotate car.
 def rot_center(image, rect, angle):
