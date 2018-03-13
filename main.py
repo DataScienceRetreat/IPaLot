@@ -85,23 +85,28 @@ def main():
         screen.blit(background, (0, 0))
         manager.moving_cars_group.draw(screen)
         manager.static_cars_group.draw(screen)
-        # test the target positions by rendering them
-        for i in range(N_CARS):
-            if manager.target_positions[i]:
-                pygame.draw.circle(screen, (250,250,0),
-                                   manager.current_target[i][0], 5
+#        # test the target positions by rendering them
+#        for i in range(N_CARS):
+#            if manager.target_positions[i]:
+#                pygame.draw.circle(screen, (250,250,0),
+#                                   manager.current_target[i][0], 5
+#                                   )
+#                pygame.draw.circle(screen, (250,250,250),
+#                                   manager.current_target[i][1], 5
+#                                   )
+#            pygame.draw.circle(screen, (250,250,0),
+#                    manager.moving_cars[i].get_frontwheel(negative_y = False),
+#                     5
+#                                )
+#            pygame.draw.circle(screen, (250,250,250),
+#                     manager.moving_cars[i].get_rearwheel(negative_y = False),
+#                     5
+#                                )
+
+        # test ABCD
+        pygame.draw.circle(screen, (250,250,0),
+                                   manager.lot.D, 5
                                    )
-                pygame.draw.circle(screen, (250,250,250),
-                                   manager.current_target[i][1], 5
-                                   )
-            pygame.draw.circle(screen, (250,250,0),
-                    manager.moving_cars[i].get_frontwheel(negative_y = False),
-                     5
-                                )
-            pygame.draw.circle(screen, (250,250,250),
-                     manager.moving_cars[i].get_rearwheel(negative_y = False),
-                     5
-                                )
                     
         pygame.display.flip()
         

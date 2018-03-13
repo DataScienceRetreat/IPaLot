@@ -95,7 +95,7 @@ class Car_handler():
             )
                 
     def get_states(self):
-        """returns a list of states for each car to feed to policy/value NN.
+        """ returns a list of states for each car to feed to policy/value NN.
         State[i] is a list [player, target, moving/static]
         ready for feeding into a multi-input NN:
         - player and target have shape (4,), the positions of the pseudowheels
@@ -104,6 +104,24 @@ class Car_handler():
         """
         pass
     
+    def get_distance(self, x, y):
+        ''' Based on a zone division of the lot, returns a shortest path
+        between two points avoiding the self.lot cars. The division goes
+        as follows:
+                        zone 3
+            ------C---------------B------
+                  ----------------
+                  ----------------
+        zone4     D---------------A   zone 2
+                  |               |
+                  |     zone 1    |
+            
+        if x is in zone 1 and y too return the distance, if y is in zone 2
+        return the distance x-A + A-y, if x in zone 3 return x-A-B-y and so on.
+        The general idea is that cars go anticlockwise around the lot
+        to reach a destination point
+        '''
+        
 #------------------------------------------------------------------------------
 
 class Filled_Lot():
@@ -118,6 +136,7 @@ class Filled_Lot():
         parking spots, and a row of horizontal cars at the top, which can have
         free spots for parallel parking.
     '''
+    pass
     
     def __init__(self, car_group):
         ''' static_cars_list will only contain cars in the outer rows,
@@ -138,6 +157,9 @@ class Filled_Lot():
         
         delta = 1.22*w*0.5 # half position increment for vertical cars
         dx = delta
+        
+        # during this loop also setup A,B,C,D, the corners of the lot
+        # according to the nomenclature used in Car_handler.get_distance()
         for i in range(n):
             #append cars to the sides for the center row
             car1 = Static_car( (x + dx ,y) )
@@ -151,6 +173,9 @@ class Filled_Lot():
                 as they may be removed when assigning free spots '''
             self.static_cars_list.append(car1)
             self.static_cars_list.append(car2)
+            if i == n-1:
+                self.A = car1.rect.bottomright
+                self.D = car2.rect.bottomleft
             # then for the upper row, with horizontal cars
             dx += delta
             if i%2 == 0:
@@ -159,6 +184,9 @@ class Filled_Lot():
                 self.static_cars_list.append(car1)
                 self.static_cars_list.append(car2)            
             dx += delta
+            if i == n-2:
+                self.B = car1.rect.topright
+                self.C = car2.rect.topleft
             
             
     def Get_spot(self, car, index, target_list):
