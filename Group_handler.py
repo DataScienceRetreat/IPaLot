@@ -112,13 +112,13 @@ class Car_handler():
             rw = self.moving_cars[i].get_rearwheel(negative_y = False)
             player = np.r_[ fw[0], fw[1], rw[0], rw[1] ]
             states[i].append(player)
-            print(player.shape)
+
             
             fw = self.current_target[i][0]
             rw = self.current_target[i][1]
             target = np.r_[ fw[0], fw[1], rw[0], rw[1] ]
             states[i].append(target)
-            print(target.shape)
+
             
             # build a list of lists to get the (capacity-1, 4) shaped nparray
             mov_sta = []
@@ -126,8 +126,11 @@ class Car_handler():
                 mov_sta.append(list(car.rect))
             for car in self.static_cars_group:
                 mov_sta.append(list(car.rect))
-            states[i].append(np.array(mov_sta))
-            print(np.array(mov_sta).shape)
+            image_mov_sta = np.expand_dims(np.array(mov_sta), axis = 2)
+            #this adds a channel dimension to the end of shape (for convnet)
+            
+            states[i].append(image_mov_sta)
+
             
         return states
     
@@ -190,7 +193,7 @@ class Filled_Lot():
         be removed from this by the get_spot method, to accomodate the
         incoming moving cars.
         The design for the matrix of cars is hardcoded: this could be improved
-        but YAGNI
+        but YAGNI. The total number of cars on screen will be 30
         
         The lot will have a row of vertical cars at the center of screen which
         will remain untouched, an equal row below, which can contain free

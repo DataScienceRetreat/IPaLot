@@ -8,6 +8,7 @@ Created on Sat Feb 10 13:26:37 2018
 import pygame
 from pygame.locals import QUIT, K_LEFT, K_RIGHT, K_UP, K_DOWN
 from Group_handler import Car_handler
+from A3C import Brain
 
 # number of moving cars per episode
 N_CARS = 4
@@ -27,6 +28,8 @@ def main():
     screen.blit(background, (0, 0))
     pygame.display.flip()
 
+#Initialise brain
+    brain = Brain()
 
 # Initialize car objects
     manager = Car_handler(N_CARS)
