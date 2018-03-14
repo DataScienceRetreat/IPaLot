@@ -32,7 +32,7 @@ def main():
     manager = Car_handler(N_CARS)
     car = manager.moving_cars[0]
 
-        
+    first_frame = True
 # Event loop
     while True:
         for event in pygame.event.get():
@@ -103,16 +103,13 @@ def main():
 #                     5
 #                                )
 
-        # test ABCD
-        pygame.draw.circle(screen, (250,250,0),
-                                   manager.lot.D, 5
-                                   )
                     
         pygame.display.flip()
         
         # get 'state'
-        states = manager.get_states()
-        
+        if first_frame:
+            states = manager.get_states()
+            first_frame=False
 
     
 if __name__ == '__main__': main()

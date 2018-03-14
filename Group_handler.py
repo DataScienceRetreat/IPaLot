@@ -13,7 +13,7 @@ class Car_handler(n):
     
 class Filled_Lot(car_group):
     Creates a filled parking lot at the center of the screen. N_cars will
-    be removed from this by the Get_spot method, to accomodate the
+    be removed from this by the get_spot method, to accomodate the
     incoming moving cars, then the remaining cars will be added to car_group
     for rendering/collisions
 
@@ -22,6 +22,8 @@ class Filled_Lot(car_group):
 import pygame
 from Cars import Car, Static_car
 import random
+import math
+import numpy as np
 
 # size of the image to be passed to the neural network for training
 NN_img_size = (70,70)
@@ -54,7 +56,7 @@ class Car_handler():
         self.lot = Filled_Lot(self.static_cars_group)
         
         # now sample n indexes in len(lot.static_cars_list) in order to
-        # create the target parking spots (Get_spot in the following loop)
+        # create the target parking spots (get_spot in the following loop)
         # and add the remaining static cars to the sprite group for
         # collision/rendering
         index = random.sample(range(len(self.lot.static_cars_list)), n)
@@ -78,7 +80,7 @@ class Car_handler():
             self.moving_cars_group.add(car)
             
             # create parking spot and save target positions
-            self.lot.Get_spot(car, index[i], self.target_positions[i])
+            self.lot.get_spot(car, index[i], self.target_positions[i])
             self.current_target.append(self.target_positions[i].pop())
             
             
@@ -96,37 +98,96 @@ class Car_handler():
                 
     def get_states(self):
         """ returns a list of states for each car to feed to policy/value NN.
-        State[i] is a list [player, target, moving/static]
+        state[i] is a list [player, target, moving/static]
         ready for feeding into a multi-input NN:
         - player and target have shape (4,), the positions of the pseudowheels
-        - moving/static has shape(4, CAPACITY-1), rect of other cars
+        - moving/static has shape(CAPACITY-1, 4), rect of other cars
         a convolution with few filters will scan the 4-uples for moving/static
         """
-        pass
+        states = []
+        for i in range(self.number_of_cars):
+            states.append([])
+            
+            fw = self.moving_cars[i].get_frontwheel(negative_y = False)
+            rw = self.moving_cars[i].get_rearwheel(negative_y = False)
+            player = np.r_[ fw[0], fw[1], rw[0], rw[1] ]
+            states[i].append(player)
+            print(player.shape)
+            
+            fw = self.current_target[i][0]
+            rw = self.current_target[i][1]
+            target = np.r_[ fw[0], fw[1], rw[0], rw[1] ]
+            states[i].append(target)
+            print(target.shape)
+            
+            # build a list of lists to get the (capacity-1, 4) shaped nparray
+            mov_sta = []
+            for car in self.collide_with[i]:
+                mov_sta.append(list(car.rect))
+            for car in self.static_cars_group:
+                mov_sta.append(list(car.rect))
+            states[i].append(np.array(mov_sta))
+            print(np.array(mov_sta).shape)
+            
+        return states
     
-    def get_distance(self, x, y):
+    def get_distance(self, p1, p2):
         ''' Based on a zone division of the lot, returns a shortest path
         between two points avoiding the self.lot cars. The division goes
         as follows:
-                        zone 3
-            ------C---------------B------
+                        zone 2
+        __________C---------------B_________
                   ----------------
                   ----------------
-        zone4     D---------------A   zone 2
+        zone 3    D---------------A   zone 1
                   |               |
-                  |     zone 1    |
+                  |     zone 0    |
             
-        if x is in zone 1 and y too return the distance, if y is in zone 2
-        return the distance x-A + A-y, if x in zone 3 return x-A-B-y and so on.
+        if p1 is in zone 0 and p2 too return the distance, if p2 is in zone 1
+        return the distance p1-A + A-p2, if p2 is in zone 2 return x-A-B-y
+        and so on.
         The general idea is that cars go anticlockwise around the lot
         to reach a destination point
         '''
+        distance = 0
+        # first determine the zones of p1, p2
+        z1 = self.get_zone(p1)
+        z2 = self.get_zone(p2)
+            
         
+        abcd = [self.A, self.B, self.C, self.D]
+
+        if z1 == z2:
+            distance = math.hypot(p1[0]-p2[0], p1[1]-p2[1])
+        else:
+            while z1 != z2:
+                distance += math.hypot(p1[0]-abcd[z1][0], p1[1]-abcd[z1][1])
+                p1 = abcd[z1]
+                z1 = (z1+1)%4 # this way if z1 was > z2 to start with, then
+                              # the car will just go around anticlockwise
+                              # until z1=z2, without index errors
+                
+            distance += math.hypot(p1[0]-p2[0], p1[1]-p2[1])
+                
+        return distance
+    
+    def get_zone(self,p):
+        '''get the zone of point p with reference to the get_distance()'''
+        if p[1] < self.B[1]:
+            return 2    
+        else:
+            if p[0] > self.A[0]:
+                return 1
+            elif p[0] < self.D[0]:
+                return 3
+            else:
+                return 0
+            
 #------------------------------------------------------------------------------
 
 class Filled_Lot():
     ''' Creates a filled parking lot at the center of the screen. N_cars will
-        be removed from this by the Get_spot method, to accomodate the
+        be removed from this by the get_spot method, to accomodate the
         incoming moving cars.
         The design for the matrix of cars is hardcoded: this could be improved
         but YAGNI
@@ -136,7 +197,6 @@ class Filled_Lot():
         parking spots, and a row of horizontal cars at the top, which can have
         free spots for parallel parking.
     '''
-    pass
     
     def __init__(self, car_group):
         ''' static_cars_list will only contain cars in the outer rows,
@@ -189,7 +249,7 @@ class Filled_Lot():
                 self.C = car2.rect.topleft
             
             
-    def Get_spot(self, car, index, target_list):
+    def get_spot(self, car, index, target_list):
         """ Create a parking spot for car and return its pseudo-wheel
         target positions list"""
         
