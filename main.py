@@ -6,11 +6,11 @@ Created on Sat Feb 10 13:26:37 2018
 """
 
 import pygame
-from pygame.locals import QUIT, K_LEFT, K_RIGHT, K_UP, K_DOWN
+from pygame.locals import QUIT
 from Group_handler import Car_handler
 from A3C import Brain
 from cfg import N_CARS, NUM_ACTIONS
-import random
+import numpy as np
 
 
 def main():
@@ -39,11 +39,25 @@ def main():
         for event in pygame.event.get():
             if event.type == QUIT:
                 return
+            
+        # get 'state'
+        states = manager.get_states()
 
         #test randomly moving cars
         for i, car in enumerate(manager.moving_cars): 
+            
+            #transform state in a len-1 batch (needed by brain.predict)
+            s = []
+            for inp in states[i]:
+                s.append(np.array( [ inp ] ))
+            
+            #get policy 
+            p = brain.predict_p(s)[0]
+                            # the [0] is once again just for shape reasons
+            
+            action_index = np.random.choice(NUM_ACTIONS, p=p)
 
-            action_index = random.randint(0,NUM_ACTIONS-1)            
+#            action_index = random.randint(0,NUM_ACTIONS-1)            
             car.act(action_index)
                 
             if car.rect.left < 0 or car.rect.right > width:
@@ -65,34 +79,14 @@ def main():
     
             car.update()        
             
-        # render
-       
+        # render       
         screen.blit(background, (0, 0))
         manager.moving_cars_group.draw(screen)
         manager.static_cars_group.draw(screen)
-#        # test the target positions by rendering them
-#        for i in range(N_CARS):
-#            if manager.target_positions[i]:
-#                pygame.draw.circle(screen, (250,250,0),
-#                                   manager.current_target[i][0], 5
-#                                   )
-#                pygame.draw.circle(screen, (250,250,250),
-#                                   manager.current_target[i][1], 5
-#                                   )
-#            pygame.draw.circle(screen, (250,250,0),
-#                    manager.moving_cars[i].get_frontwheel(negative_y = False),
-#                     5
-#                                )
-#            pygame.draw.circle(screen, (250,250,250),
-#                     manager.moving_cars[i].get_rearwheel(negative_y = False),
-#                     5
-#                                )
-
-                    
+                   
         pygame.display.flip()
         
-        # get 'state'
-        states = manager.get_states()
+
 
     
 if __name__ == '__main__': main()
