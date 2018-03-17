@@ -51,6 +51,10 @@ class Car_handler():
         self.static_cars_group = pygame.sprite.Group()
         self.moving_cars_group = pygame.sprite.Group()
         self.lot = Filled_Lot(self.static_cars_group)
+        self.A = self.lot.A
+        self.B = self.lot.B
+        self.C = self.lot.C
+        self.D = self.lot.D        
         
         # now sample n indexes in len(lot.static_cars_list) in order to
         # create the target parking spots (get_spot in the following loop)
