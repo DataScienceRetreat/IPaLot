@@ -17,19 +17,13 @@ def rot_center(image, rect, angle):
 
 """
 
-MAXSPEED = 0.4
-MINSPEED = -0.4
-MAXSTEERING = 35 #degrees
-
-STEERING = 0.5
-ACCELERATION = 0.08
-SOFTENING = 0.04
-STEER_SOFTENING = 0.2
-
-
 import pygame
 from loader import load_image
 import math
+
+from cfg import MAXSPEED, MINSPEED, MAXSTEERING, STEERING
+from cfg import ACCELERATION, SOFTENING, STEER_SOFTENING
+
 
 """
 NOTE: I'll keep y negative (standard xy axis, y goes up)
@@ -156,7 +150,7 @@ class Car(pygame.sprite.Sprite):
 
 #------------------------------------------------------------------------------
         
-#Rotate car.
+#auxiliary function to rotate a car.
 def rot_center(image, rect, angle):
         """rotate an image while keeping its center"""
         rot_image = pygame.transform.rotate(image, angle - 90)

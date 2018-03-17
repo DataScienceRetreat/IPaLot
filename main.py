@@ -9,9 +9,7 @@ import pygame
 from pygame.locals import QUIT, K_LEFT, K_RIGHT, K_UP, K_DOWN
 from Group_handler import Car_handler
 from A3C import Brain
-
-# number of moving cars per episode
-N_CARS = 4
+from cfg import N_CARS
 
 
 def main():

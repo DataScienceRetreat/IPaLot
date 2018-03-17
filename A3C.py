@@ -11,42 +11,13 @@ https://github.com/jaara/AI-blog/blob/master/CartPole-A3C.py
 
 import numpy as np
 import tensorflow as tf
-
-import time, random, threading
-
+import time, threading
 import keras.models as models
 import keras.layers as layers
 from keras import backend as K
 
-#-- constants
-
-INPUT_SHAPE = (None, 29, 4, 1)
-NONE_STATE = [np.zeros((4,)), np.zeros((4,)), np.zeros((29,4,1))]
-'''shape for the colliding cars input, there are 29 of them,
-each with a rect (4 numbers). The Filled_Lot class in Group_handler.py
-is where the total number of cars 29+1 comes from'''
-
-NUM_ACTIONS=7
-
-RUN_TIME = 30
-THREADS = 8
-OPTIMIZERS = 2
-THREAD_DELAY = 0.001
-
-GAMMA = 0.99
-
-N_STEP_RETURN = 8
-GAMMA_N = GAMMA ** N_STEP_RETURN
-
-EPS_START = 0.4
-EPS_STOP  = .15
-EPS_STEPS = 75000
-
-MIN_BATCH = 32
-LEARNING_RATE = 5e-3
-
-LOSS_V = .5			# v loss coefficient
-LOSS_ENTROPY = .01 	# entropy coefficient
+from cfg import INPUT_SHAPE, NONE_STATE, NUM_ACTIONS, MIN_BATCH, LEARNING_RATE
+from cfg import LOSS_V, LOSS_ENTROPY, GAMMA_N
 
 #---------
 class Brain():

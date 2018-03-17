@@ -25,10 +25,7 @@ import random
 import math
 import numpy as np
 
-# size of the image to be passed to the neural network for training
-NN_img_size = (70,70)
-# initial car positions heigth
-FROM_BOTTOM = 45
+from cfg import FROM_BOTTOM
 
 class Car_handler():
     """
