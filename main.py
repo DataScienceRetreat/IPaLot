@@ -9,7 +9,8 @@ import pygame
 from pygame.locals import QUIT, K_LEFT, K_RIGHT, K_UP, K_DOWN
 from Group_handler import Car_handler
 from A3C import Brain
-from cfg import N_CARS
+from cfg import N_CARS, NUM_ACTIONS
+import random
 
 
 def main():
@@ -31,55 +32,38 @@ def main():
 
 # Initialize car objects
     manager = Car_handler(N_CARS)
-    car = manager.moving_cars[0]
 
-    first_frame = True
+
 # Event loop
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
                 return
-            
-        #Check for key input. (KEYDOWN, trigger often)
-        keys = pygame.key.get_pressed()
-        if keys[K_LEFT]:
-            car.steerleft()
-        else:
-            car.steer_soften()
-            
-        if keys[K_RIGHT]:
-            car.steerright()
-        else:
-            car.steer_soften()          
-            
-        if keys[K_UP]:
-            car.accelerate()
-        else:
-            car.soften()
-            
-        if keys[K_DOWN]:
-            car.deaccelerate()
-        else:
-            car.soften()
-            
-        if car.rect.left < 0 or car.rect.right > width:
-            manager.reset_car(0)
-        if car.rect.top < 0 or car.rect.bottom > height:
-            manager.reset_car(0)                 
-        
-        if pygame.sprite.spritecollide(car,
-                                       manager.static_cars_group,
-                                       False,
-                                       pygame.sprite.collide_mask):
-            manager.reset_car(0)
-            
-        if pygame.sprite.spritecollide(car,
-                                       manager.collide_with[0],
-                                       False,
-                                       pygame.sprite.collide_mask):            
-            manager.reset_car(0)
 
-        car.update()        
+        #test randomly moving cars
+        for i, car in enumerate(manager.moving_cars): 
+
+            action_index = random.randint(0,NUM_ACTIONS-1)            
+            car.act(action_index)
+                
+            if car.rect.left < 0 or car.rect.right > width:
+                manager.reset_car(i)
+            if car.rect.top < 0 or car.rect.bottom > height:
+                manager.reset_car(i)                 
+            
+            if pygame.sprite.spritecollide(car,
+                                           manager.static_cars_group,
+                                           False,
+                                           pygame.sprite.collide_mask):
+                manager.reset_car(i)
+                
+            if pygame.sprite.spritecollide(car,
+                                           manager.collide_with[i],
+                                           False,
+                                           pygame.sprite.collide_mask):            
+                manager.reset_car(i)
+    
+            car.update()        
             
         # render
        
@@ -108,9 +92,7 @@ def main():
         pygame.display.flip()
         
         # get 'state'
-        if first_frame:
-            states = manager.get_states()
-            first_frame=False
+        states = manager.get_states()
 
     
 if __name__ == '__main__': main()

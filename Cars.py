@@ -57,6 +57,20 @@ class Car(pygame.sprite.Sprite):
             self.wheelbase = wheelbase
 
         self.mask = pygame.mask.from_surface(self.image) #for collisions
+        
+        self.action_list = {
+                    0 : [self.accelerate, self.steer_soften],
+                    1 : [self.accelerate, self.steerleft],
+                    2 : [self.accelerate, self.steerright],
+                    3 : [self.deaccelerate, self.steer_soften],
+                    4 : [self.deaccelerate, self.steerleft],
+                    5 : [self.deaccelerate, self.steerright],
+                    6 : [self.soften, self.steer_soften]
+                    }
+
+    def act(self, index):
+        for func in self.action_list[index]:
+            func()
 
     #bring car to initial position and speed    
     def reset(self, pos=None):
@@ -102,8 +116,10 @@ class Car(pygame.sprite.Sprite):
         rearwheel_x += self.speed * math.cos(math.radians(self.dir))
         rearwheel_y += self.speed * math.sin(math.radians(self.dir))
         
-        frontwheel_x += self.speed * math.cos(math.radians(self.dir + self.steer_angle))
-        frontwheel_y += self.speed * math.sin(math.radians(self.dir + self.steer_angle))
+        frontwheel_x += self.speed * math.cos(math.radians(
+                self.dir + self.steer_angle))
+        frontwheel_y += self.speed * math.sin(math.radians(
+                self.dir + self.steer_angle))
         
         # update x and y by averaging the positions of the virtual wheels 
         self.x = 0.5*(rearwheel_x + frontwheel_x)
@@ -113,10 +129,12 @@ class Car(pygame.sprite.Sprite):
 
         # and finally update the car rotation       
         self.dir = math.degrees(
-                math.atan2(frontwheel_y - rearwheel_y, frontwheel_x - rearwheel_x)
+                math.atan2(frontwheel_y - rearwheel_y,
+                           frontwheel_x - rearwheel_x)
                 )
         
-        self.image, self.rect = rot_center(self.image_orig, self.rect, self.dir )
+        self.image, self.rect = rot_center(self.image_orig,
+                                           self.rect, self.dir )
         self.mask = pygame.mask.from_surface(self.image) #for collisions        
         
 
@@ -133,16 +151,20 @@ class Car(pygame.sprite.Sprite):
                 self.steer_angle = min( 0, self.steer_angle + STEER_SOFTENING)
                 
     def get_frontwheel(self, negative_y = True):
-        frontwheel_x = self.x + 0.5*self.wheelbase * math.cos(math.radians(self.dir))
-        frontwheel_y = self.y + 0.5*self.wheelbase * math.sin(math.radians(self.dir))
+        frontwheel_x = self.x + 0.5*self.wheelbase * math.cos(
+                math.radians(self.dir))
+        frontwheel_y = self.y + 0.5*self.wheelbase * math.sin(
+                math.radians(self.dir))
         if negative_y:
             return frontwheel_x, frontwheel_y # class xy system
         else:
             return round(frontwheel_x), round(- frontwheel_y) # image xy system
     
     def get_rearwheel(self, negative_y = True):
-        rearwheel_x = self.x - 0.5*self.wheelbase * math.cos(math.radians(self.dir))
-        rearwheel_y = self.y - 0.5*self.wheelbase * math.sin(math.radians(self.dir))
+        rearwheel_x = self.x - 0.5*self.wheelbase * math.cos(
+                math.radians(self.dir))
+        rearwheel_y = self.y - 0.5*self.wheelbase * math.sin(
+                math.radians(self.dir))
         if negative_y:
             return rearwheel_x, rearwheel_y # class xy system       
         else:
