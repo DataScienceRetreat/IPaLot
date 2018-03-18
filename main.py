@@ -7,7 +7,7 @@ Created on Sat Feb 10 13:26:37 2018
 
 import pygame
 from pygame.locals import QUIT
-from Group_handler import Car_handler
+from cars.Group_handler import Car_handler
 from A3C import Brain
 from cfg import N_CARS, NUM_ACTIONS
 import numpy as np

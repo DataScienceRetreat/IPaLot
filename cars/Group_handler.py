@@ -20,12 +20,12 @@ class Filled_Lot(car_group):
 """
 
 import pygame
-from Cars import Car, Static_car
+from .Cars import Car, Static_car
 import random
 import math
 import numpy as np
 
-from cfg import FROM_BOTTOM
+from .cfg import FROM_BOTTOM
 
 class Car_handler():
     """

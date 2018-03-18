@@ -7,6 +7,11 @@ Based on the A3C implementation by Jaromir Janisch, 2017
 available under MIT license at
 https://github.com/jaara/AI-blog/blob/master/CartPole-A3C.py
 
+
+class Brain():
+    sets up the NN predicting policy/value for A3C 
+
+
 """
 
 import numpy as np

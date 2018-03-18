@@ -24,8 +24,8 @@
 #Media loader class.
 #Loads images.
 
-import os, sys, pygame
-from pygame.locals import *
+import os, pygame
+from pygame.locals import RLEACCEL
 import math
 
 def load_image(file, transparent = True):

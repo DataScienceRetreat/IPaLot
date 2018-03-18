@@ -18,11 +18,11 @@ def rot_center(image, rect, angle):
 """
 
 import pygame
-from loader import load_image
+from .loader import load_image
 import math
 
-from cfg import MAXSPEED, MINSPEED, MAXSTEERING, STEERING
-from cfg import ACCELERATION, SOFTENING, STEER_SOFTENING
+from .cfg import MAXSPEED, MINSPEED, MAXSTEERING, STEERING
+from .cfg import ACCELERATION, SOFTENING, STEER_SOFTENING
 
 
 """
