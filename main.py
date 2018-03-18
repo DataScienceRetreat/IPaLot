@@ -8,8 +8,8 @@ Created on Sat Feb 10 13:26:37 2018
 import pygame
 from pygame.locals import QUIT
 from cars.Group_handler import Car_handler
-from A3C import Brain
-from cfg import N_CARS, NUM_ACTIONS
+from A3C import Brain, Optimizer
+from cfg import N_CARS, NUM_ACTIONS, OPTIMIZERS
 import numpy as np
 
 
@@ -27,18 +27,22 @@ def main():
     screen.blit(background, (0, 0))
     pygame.display.flip()
 
-#Initialise brain
+# Initialise brain, optimizer threads, and environment threads
     brain = Brain()
+    optimizers = [Optimizer(brain) for i in range(OPTIMIZERS)]
+
+    for o in optimizers:
+        o.start()
 
 # Initialize car objects
     manager = Car_handler(N_CARS)
 
-
+    loop = True
 # Event loop
-    while True:
+    while loop:
         for event in pygame.event.get():
             if event.type == QUIT:
-                return
+                loop = False
             
         # get 'state'
         states = manager.get_states()
@@ -86,7 +90,10 @@ def main():
                    
         pygame.display.flip()
         
-
+    for o in optimizers:
+        o.stop()
+    for o in optimizers:
+        o.join()
 
     
 if __name__ == '__main__': main()

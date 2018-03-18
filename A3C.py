@@ -24,7 +24,7 @@ from keras import backend as K
 from cfg import INPUT_SHAPE, NONE_STATE, NUM_ACTIONS, MIN_BATCH, LEARNING_RATE
 from cfg import LOSS_V, LOSS_ENTROPY, GAMMA_N
 
-#---------
+#------------------------------------------------------------------------------
 class Brain():
     def __init__(self):
         self.train_queue = [ [], [], [], [], [] ]
@@ -122,7 +122,11 @@ class Brain():
             s, a, r, s_, s_mask = self.train_queue
             self.train_queue = [ [], [], [], [], [] ]
 
-        s = np.vstack(s)
+        # stack the 3 input parts separately for training
+        s1 = np.vstack(np.vstack(s)[:,0]) 
+        s2 = np.vstack(np.vstack(s)[:,1])
+        s3 = np.vstack(np.vstack(s)[:,2])
+        
         a = np.vstack(a)
         r = np.vstack(r)
         s_ = np.vstack(s_)
@@ -136,7 +140,7 @@ class Brain():
 
         s1_t, s2_t, s3_t, a_t, r_t, minimize = self.graph
         self.session.run(minimize,
-                feed_dict={s1_t: s[0], s2_t: s[1], s3_t: s[2], a_t: a, r_t: r}
+                feed_dict={s1_t: s1, s2_t: s2, s3_t: s3, a_t: a, r_t: r}
                 )
 
     def train_push(self, s, a, r, s_):
@@ -166,3 +170,20 @@ class Brain():
         with self.default_graph.as_default():
             p, v = self.model.predict(s)
             return v
+        
+        
+#------------------------------------------------------------------------------
+            
+class Optimizer(threading.Thread):
+
+    def __init__(self, brain):
+        threading.Thread.__init__(self)
+        self.brain = brain
+        self.stop_signal = False
+
+    def run(self):
+        while not self.stop_signal:
+            self.brain.optimize()
+
+    def stop(self):
+        self.stop_signal = True
