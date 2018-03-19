@@ -11,18 +11,35 @@ https://github.com/jaara/AI-blog/blob/master/CartPole-A3C.py
 class Brain():
     sets up the NN predicting policy/value for A3C 
 
+class Optimizer{threading.Thread}(brain):
+    sets up optimizer threads executing brain.optimize() for the global brain
+
+class Environment{threading.Thread}(brain, render_on=None, eps_start=EPS_START,
+                 eps_end=EPS_STOP, eps_steps=EPS_STEPS):
+    each environment will run episodes with N_CARS agents, update the state
+    at each frame, get the N_CARS rewards, and push the experience on the
+    training queue
+    
+class Agent{threading.Thread}(brain,manager,eps_start,eps_end,eps_steps,
+                 state,action_list,index,reward_list):
+    each agent will compute a[i] = pi(s[i]), act on car[i],
+    and compute a temporary reward based on distance, neglecting collisions
 
 """
 
 import numpy as np
+import pygame, random
 import tensorflow as tf
 import time, threading
 import keras.models as models
 import keras.layers as layers
 from keras import backend as K
+from cars.Group_handler import Car_handler
 
 from cfg import INPUT_SHAPE, NONE_STATE, NUM_ACTIONS, MIN_BATCH, LEARNING_RATE
-from cfg import LOSS_V, LOSS_ENTROPY, GAMMA_N
+from cfg import LOSS_V, LOSS_ENTROPY, GAMMA_N, EPS_START, EPS_STOP, EPS_STEPS
+from cfg import THREAD_DELAY, N_CARS, BACKGROUND_COLOR, WIDTH, HEIGHT, GAMMA
+from cfg import N_STEP_RETURN
 
 #------------------------------------------------------------------------------
 class Brain():
@@ -30,6 +47,8 @@ class Brain():
         self.train_queue = [ [], [], [], [], [] ]
         # s, a, r, s', s' terminal mask
         
+        self.counter = 0 # update every time it trains,
+                         # used to decrese epsilon, for e-greedy policy
         self.lock_queue = threading.Lock()        
         self.session = tf.Session()
         K.set_session(self.session)
@@ -119,17 +138,23 @@ class Brain():
             if len(self.train_queue[0]) < MIN_BATCH:	# more thread could have passed without lock
                 return 									# we can't yield inside lock
 
+            self.counter += 1
             s, a, r, s_, s_mask = self.train_queue
             self.train_queue = [ [], [], [], [], [] ]
 
         # stack the 3 input parts separately for training
-        s1 = np.vstack(np.vstack(s)[:,0]) 
-        s2 = np.vstack(np.vstack(s)[:,1])
-        s3 = np.vstack(np.vstack(s)[:,2])
+        s1 = np.stack(np.stack(s)[:,0]) 
+        s2 = np.stack(np.stack(s)[:,1])
+        s3 = np.stack(np.stack(s)[:,2])
         
         a = np.vstack(a)
         r = np.vstack(r)
-        s_ = np.vstack(s_)
+        
+        s1_ = np.stack(np.stack(s_)[:,0]) 
+        s2_ = np.stack(np.stack(s_)[:,1])
+        s3_ = np.stack(np.stack(s_)[:,2])        
+        s_ = [s1_, s2_, s3_]
+
         s_mask = np.vstack(s_mask)
 
         if len(s) > 5*MIN_BATCH:
@@ -185,5 +210,247 @@ class Optimizer(threading.Thread):
         while not self.stop_signal:
             self.brain.optimize()
 
+    def stop(self):
+        self.stop_signal = True
+        
+#------------------------------------------------------------------------------
+        
+class Environment(threading.Thread):
+
+    def __init__(self, brain, render_on=None, eps_start=EPS_START,
+                 eps_end=EPS_STOP, eps_steps=EPS_STEPS):
+        
+        threading.Thread.__init__(self)
+        
+        self.brain = brain
+        
+        self.eps_start = eps_start
+        self.eps_end = eps_end
+        self.eps_steps = eps_steps
+
+        self.stop_signal = False
+        if render_on is not None:
+            self.render = True
+            self.screen = render_on
+
+        self.memories = []
+        self.tot_rewards = [] 
+
+
+    def runEpisode(self): 
+        manager = Car_handler(N_CARS)
+        
+        states = manager.get_states()
+        
+        R = 0
+        frame = 0
+
+        for i in range(N_CARS):
+            self.memories.append([])
+            self.tot_rewards.append(0)
+
+        done = False 
+        
+        while True:
+
+            time.sleep(THREAD_DELAY) # yield 
+            
+            agents = []
+            actions = []
+            one_hot_actions = []
+            rewards = []
+
+            
+            for i in range(N_CARS):
+                actions.append(None)
+                one_hot_actions.append(np.zeros(NUM_ACTIONS))
+                rewards.append(None)
+                agents.append(Agent( self.brain,
+                                     manager,
+                                     self.eps_start,
+                                     self.eps_end,
+                                     self.eps_steps,
+                                     states[i],
+                                     actions, i, # we will write on action[i]
+                                     rewards     # will write on rewards[i]
+                                     )
+                                )
+        
+                agents[i].start()
+                # each agent will compute a[i] = pi(s[i]), act on car[i],
+                # and compute a temporary reward based on distance, neglecting
+                # collisions
+                
+            # now wait for all agents to do their job
+            for agent in agents:
+                agent.join()
+
+            for i, car in enumerate(manager.moving_cars):                
+                # check for collisions for each car          
+                collision = True                
+                if car.rect.left < 0 or car.rect.right > WIDTH:
+                    manager.reset_car(i)
+                elif car.rect.top < 0 or car.rect.bottom > HEIGHT:
+                    manager.reset_car(i)                             
+                elif pygame.sprite.spritecollide(car,
+                                           manager.static_cars_group,
+                                           False,
+                                           pygame.sprite.collide_mask):
+                    manager.reset_car(i)                
+                elif pygame.sprite.spritecollide(car,
+                                           manager.collide_with[i],
+                                           False,
+                                           pygame.sprite.collide_mask):            
+                    manager.reset_car(i)
+                else:
+                    collision = False
+                    
+                if collision:
+                    rewards[i] = -1
+                    
+                
+                    
+                # get one-hot enconding of the action
+                one_hot_actions[i][actions[i]] = 1 
+
+            # get the new state, the manager will set terminal states to None
+            new_states = manager.get_states()
+
+            # push s,a,r,s' into each car's memory, and communicate to brain
+            self.memory_train(states, one_hot_actions, rewards, new_states)
+
+            states = new_states
+            
+            for i in range(N_CARS):
+                R += rewards[i]
+            
+            if self.render:
+                background = pygame.Surface(self.screen.get_size())
+                background = background.convert()
+                background.fill(BACKGROUND_COLOR)
+                self.screen.blit(background, (0, 0))
+                manager.moving_cars_group.draw(self.screen)
+                manager.static_cars_group.draw(self.screen)
+                   
+                pygame.display.flip()
+            
+            frame += 1
+            
+            if done or self.stop_signal:
+               break
+
+        print(R)
+
+    def run(self):
+        while not self.stop_signal:
+            self.runEpisode()
+
+    def stop(self):
+        self.stop_signal = True
+        
+        
+    def memory_train(self, states, actions, rewards, states_):
+
+        for i in range(N_CARS):
+            # first push s,a,r,s' into individual memory
+            self.memories[i].append( [ states[i],
+                                    actions[i],
+                                    rewards[i],
+                                    states_[i] ] )
+            self.tot_rewards[i] = ( self.tot_rewards[i] +
+                                    rewards[i] * GAMMA_N ) / GAMMA
+
+            # send everything in memory to the training queue if s' is terminal
+            if states_[i] is None:
+                while len(self.memories[i]) > 0:
+                    n = len(self.memories[i])
+                    s, a, _, _  = self.memories[i][0]
+                    _, _, _, s_ = self.memories[i][n-1]
+                    r = self.tot_rewards[i]
+                    self.brain.train_push(s, a, r, s_)
+
+                    self.tot_rewards[i] = ( self.tot_rewards[i]
+                                            - self.memories[i][0][2] ) / GAMMA
+                    self.memories[i].pop(0)		
+
+                self.tot_rewards[i] = 0
+
+            # if enough steps have been accumulated in memory, send 
+            # an N-STEPS result to the training queue
+            if len(self.memories[i]) >= N_STEP_RETURN:
+                s, a, _, _  = self.memories[i][0]
+                _, _, _, s_ = self.memories[i][N_STEP_RETURN-1]
+                r = self.tot_rewards[i]
+                self.brain.train_push(s, a, r, s_)
+
+                self.tot_rewards[i] = ( self.tot_rewards[i]
+                                            - self.memories[i][0][2] )
+                self.memories[i].pop(0)
+
+
+#------------------------------------------------------------------------------
+           
+class Agent(threading.Thread):
+
+    def __init__(self,
+                 brain,
+                 manager,
+                 eps_start,
+                 eps_end,
+                 eps_steps,
+                 state,
+                 action_list,
+                 index,
+                 reward_list
+                 ):
+        
+        threading.Thread.__init__(self)
+        
+        self.brain = brain
+        self.car = manager.moving_cars[index]
+        self.manager = manager
+        
+        if(self.brain.counter >= eps_steps):
+            self.epsilon = eps_end
+        else:
+            self.epsilon = eps_start + self.brain.counter * (eps_end - 
+                        eps_start) / eps_steps	# linearly interpolate
+        self.state = state
+        self.action_list = action_list
+        self.i = index
+        self.reward_list = reward_list
+        
+    def run(self):
+        '''each agent will compute a[i] = pi(s[i]), act on car[i],
+        and compute a temporary reward based on distance, neglecting
+        collisions'''
+            
+        if random.random() < self.epsilon:
+            a = random.randint(0, NUM_ACTIONS-1)
+        else:
+            #transform state in a len-1 batch (needed by brain.predict)
+            s = []
+            for inpt in self.state:
+                s.append(np.array( [ inpt ] ))
+            #get policy 
+            p = self.brain.predict_p(s)[0]
+                            # the [0] is once again just for shape reasons
+            a = np.random.choice(NUM_ACTIONS, p=p)
+        
+        # act and save action in the list for external access
+        self.car.act(a)
+        self.action_list[self.i] = a
+        
+        # now get distance-based reward
+        fwp = self.car.get_frontwheel(negative_y = False)
+        rwp = self.car.get_rearwheel(negative_y = False)
+        fwt = self.manager.current_target[self.i][0]
+        rwt = self.manager.current_target[self.i][1]
+        dist1 = self.manager.get_distance(fwp,fwt)
+        dist2 = self.manager.get_distance(rwp,rwt)
+        reward = min( (1.0/(dist1 + 1e-10) + 1.0/(dist2 + 1e-10)), 2)
+            # when car is in place reward is not 2e10 but just 1
+        self.reward_list[self.i] = reward
+            
     def stop(self):
         self.stop_signal = True

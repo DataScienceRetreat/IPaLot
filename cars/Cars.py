@@ -3,12 +3,12 @@
 Created on Sat Feb 10 13:53:42 2018
 @author: Orlando Ciricosta
 
-class Car(pygame.sprite.Sprite, pos=position, wheelbase=wb):
+class Car{pygame.sprite.Sprite}(pos=position, wheelbase=wb):
     Provides the controllable object car: the controller can be whoever 
     calls the acceleration\steering methods, either human or AI. The calls
     for human control are in the main loop
 
-class Static_car(pygame.sprite.Sprite):
+class Static_car{pygame.sprite.Sprite}:
     provides basic car objects that just seat in
     the given space to provide a collider. For training purposes
 
@@ -71,6 +71,7 @@ class Car(pygame.sprite.Sprite):
     def act(self, index):
         for func in self.action_list[index]:
             func()
+        self.update()
 
     #bring car to initial position and speed    
     def reset(self, pos=None):
@@ -84,6 +85,7 @@ class Car(pygame.sprite.Sprite):
         self.dir = 90
         self.speed = 0.0
         self.steer_angle = 0.0
+        self.update()
 
     #Accelerate the vehicle
     def accelerate(self):

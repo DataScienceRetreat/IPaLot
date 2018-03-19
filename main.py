@@ -6,17 +6,15 @@ Created on Sat Feb 10 13:26:37 2018
 """
 
 import pygame
-from pygame.locals import QUIT
-from cars.Group_handler import Car_handler
-from A3C import Brain, Optimizer
-from cfg import N_CARS, NUM_ACTIONS, OPTIMIZERS
-import numpy as np
+from A3C import Brain, Optimizer, Environment
+from cfg import OPTIMIZERS, WIDTH, HEIGHT, ENVIRONMENTS
+import time
 
 
 def main():
     
 # Initialize screen
-    size = width, height = 700, 400
+    size = WIDTH, HEIGHT
     pygame.init()
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('Basic parking traing')
@@ -30,70 +28,30 @@ def main():
 # Initialise brain, optimizer threads, and environment threads
     brain = Brain()
     optimizers = [Optimizer(brain) for i in range(OPTIMIZERS)]
+    environments = [Environment(brain) for i in range(ENVIRONMENTS)]
+
+    #render for env[0]
+    environments[0].render = True
+    environments[0].screen = screen
 
     for o in optimizers:
         o.start()
+        
+    for e in environments:
+        e.start()
 
-# Initialize car objects
-    manager = Car_handler(N_CARS)
-
-    loop = True
-# Event loop
-    while loop:
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                loop = False
-            
-        # get 'state'
-        states = manager.get_states()
-
-        #test randomly moving cars
-        for i, car in enumerate(manager.moving_cars): 
-            
-            #transform state in a len-1 batch (needed by brain.predict)
-            s = []
-            for inp in states[i]:
-                s.append(np.array( [ inp ] ))
-            
-            #get policy 
-            p = brain.predict_p(s)[0]
-                            # the [0] is once again just for shape reasons
-            
-            action_index = np.random.choice(NUM_ACTIONS, p=p)
-
-#            action_index = random.randint(0,NUM_ACTIONS-1)            
-            car.act(action_index)
-                
-            if car.rect.left < 0 or car.rect.right > width:
-                manager.reset_car(i)
-            if car.rect.top < 0 or car.rect.bottom > height:
-                manager.reset_car(i)                 
-            
-            if pygame.sprite.spritecollide(car,
-                                           manager.static_cars_group,
-                                           False,
-                                           pygame.sprite.collide_mask):
-                manager.reset_car(i)
-                
-            if pygame.sprite.spritecollide(car,
-                                           manager.collide_with[i],
-                                           False,
-                                           pygame.sprite.collide_mask):            
-                manager.reset_car(i)
-    
-            car.update()        
-            
-        # render       
-        screen.blit(background, (0, 0))
-        manager.moving_cars_group.draw(screen)
-        manager.static_cars_group.draw(screen)
-                   
-        pygame.display.flip()
+# Then train for a fixed time
+    time.sleep(10)
         
     for o in optimizers:
         o.stop()
     for o in optimizers:
         o.join()
+
+    for e in environments:
+        e.stop()
+    for e in environments:
+        e.join()
 
     
 if __name__ == '__main__': main()

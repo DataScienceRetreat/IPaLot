@@ -109,17 +109,13 @@ class Car_handler():
         for i in range(self.number_of_cars):
             states.append([])
             
-            fw = self.moving_cars[i].get_frontwheel(negative_y = False)
-            rw = self.moving_cars[i].get_rearwheel(negative_y = False)
-            player = np.r_[ fw[0], fw[1], rw[0], rw[1] ]
-            states[i].append(player)
-
+            fwp = self.moving_cars[i].get_frontwheel(negative_y = False)
+            rwp = self.moving_cars[i].get_rearwheel(negative_y = False)
+            player = np.r_[ fwp[0], fwp[1], rwp[0], rwp[1] ]
             
-            fw = self.current_target[i][0]
-            rw = self.current_target[i][1]
-            target = np.r_[ fw[0], fw[1], rw[0], rw[1] ]
-            states[i].append(target)
-
+            fwt = self.current_target[i][0]
+            rwt = self.current_target[i][1]
+            target = np.r_[ fwt[0], fwt[1], rwt[0], rwt[1] ]
             
             # build a list of lists to get the (capacity-1, 4) shaped nparray
             mov_sta = []
@@ -130,7 +126,14 @@ class Car_handler():
             image_mov_sta = np.expand_dims(np.array(mov_sta), axis = 2)
             #this adds a channel dimension to the end of shape (for convnet)
             
-            states[i].append(image_mov_sta)
+            dist1 = self.get_distance(fwp,fwt)
+            dist2 = self.get_distance(rwp,rwt)
+            if ( dist1 <= 1) and ( dist2 <= 1):
+                states[i] = None # this will be a terminal state for training
+            else:
+                states[i].append(player)
+                states[i].append(target)            
+                states[i].append(image_mov_sta)
 
             
         return states

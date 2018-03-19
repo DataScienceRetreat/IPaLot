@@ -9,8 +9,9 @@ Created on Sat Mar 17 10:30:44 2018
 # number of moving cars per episode
 N_CARS = 4
 
-# number of optimizer threads
+# number of threads
 OPTIMIZERS = 2
+ENVIRONMENTS = 1
 
 #-- constants for A3C
 import numpy as np
@@ -33,3 +34,14 @@ GAMMA = 0.99
 N_STEP_RETURN = 8
 GAMMA_N = GAMMA ** N_STEP_RETURN
 
+EPS_START = 0.4
+EPS_STOP  = .15
+EPS_STEPS = 75000
+
+THREAD_DELAY = 0.001
+
+# bkg color
+BACKGROUND_COLOR = (50, 50, 50)
+
+#screen size
+WIDTH, HEIGHT = 700, 400
