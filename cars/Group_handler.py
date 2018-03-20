@@ -113,24 +113,40 @@ class Car_handler():
             
             fwp = self.moving_cars[i].get_frontwheel(negative_y = False)
             rwp = self.moving_cars[i].get_rearwheel(negative_y = False)
-            player = np.r_[ fwp[0], fwp[1], rwp[0], rwp[1] ]
+            player = np.r_[ fwp[0]/WIDTH,
+                            fwp[1]/HEIGHT,
+                            rwp[0]/WIDTH,
+                            rwp[1]/HEIGHT ]
             
             fwt = self.current_target[i][0]
             rwt = self.current_target[i][1]
-            target = np.r_[ fwt[0], fwt[1], rwt[0], rwt[1] ]
+            target = np.r_[ fwt[0]/WIDTH,
+                            fwt[1]/HEIGHT,
+                            rwt[0]/WIDTH,
+                            rwt[1]/HEIGHT ]
             
             # build a list of lists to get the (capacity-1, 4) shaped nparray
             mov_sta = []
             for car in self.collide_with[i]:
-                mov_sta.append(list(car.rect))
+#                mov_sta.append(list(car.rect))
+                mov_sta.append([car.rect.top/HEIGHT,
+                                car.rect.left/WIDTH,
+                                car.rect.bottom/HEIGHT,
+                                car.rect.right/WIDTH
+                                ])                
             for car in self.static_cars_group:
-                mov_sta.append(list(car.rect))
+#                mov_sta.append(list(car.rect))
+                mov_sta.append([car.rect.top/HEIGHT,
+                                car.rect.left/WIDTH,
+                                car.rect.bottom/HEIGHT,
+                                car.rect.right/WIDTH
+                                ])   
             image_mov_sta = np.expand_dims(np.array(mov_sta), axis = 2)
-            #this adds a channel dimension to the end of shape (for convnet)
+            # this adds a channel dimension to the end of shape (for convnet)
             
             dist1 = self.get_distance(fwp,fwt)
             dist2 = self.get_distance(rwp,rwt)
-            if ( dist1 <= 1) and ( dist2 <= 1):
+            if ( dist1 <= 1 ) and ( dist2 <= 1 ):
                 terminal_flags[i] = True
                 if self.target_positions[i]: # if there are new targets left
                     self.current_target[i] = self.target_positions[i].pop()
