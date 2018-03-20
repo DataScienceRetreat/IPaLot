@@ -252,8 +252,8 @@ class Filled_Lot():
                 self.static_cars_list.append(car2)            
             dx += delta
             if i == n-2:
-                self.B = car1.rect.topright
-                self.C = car2.rect.topleft
+                self.B = car1.rect.bottomright
+                self.C = car2.rect.bottomleft
             
             
     def get_spot(self, car, index, target_list):

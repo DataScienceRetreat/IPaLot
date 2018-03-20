@@ -11,7 +11,7 @@ N_CARS = 4
 
 # number of threads
 OPTIMIZERS = 2
-ENVIRONMENTS = 1
+ENVIRONMENTS = 2
 
 #-- constants for A3C
 import numpy as np
@@ -29,9 +29,9 @@ LEARNING_RATE = 5e-3
 LOSS_V = .5			# v loss coefficient
 LOSS_ENTROPY = .01 	# entropy coefficient
 
-GAMMA = 0.99
+GAMMA = 0.95
 
-N_STEP_RETURN = 8
+N_STEP_RETURN = 20
 GAMMA_N = GAMMA ** N_STEP_RETURN
 
 EPS_START = 0.4
@@ -39,6 +39,8 @@ EPS_STOP  = .15
 EPS_STEPS = 75000
 
 THREAD_DELAY = 0.001
+
+MAX_FRAMES = 1000
 
 # bkg color
 BACKGROUND_COLOR = (50, 50, 50)

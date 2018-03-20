@@ -39,7 +39,7 @@ from cars.Group_handler import Car_handler
 from cfg import INPUT_SHAPE, NONE_STATE, NUM_ACTIONS, MIN_BATCH, LEARNING_RATE
 from cfg import LOSS_V, LOSS_ENTROPY, GAMMA_N, EPS_START, EPS_STOP, EPS_STEPS
 from cfg import THREAD_DELAY, N_CARS, BACKGROUND_COLOR, WIDTH, HEIGHT, GAMMA
-from cfg import N_STEP_RETURN
+from cfg import N_STEP_RETURN, MAX_FRAMES
 
 #------------------------------------------------------------------------------
 class Brain():
@@ -227,6 +227,9 @@ class Environment(threading.Thread):
         self.eps_start = eps_start
         self.eps_end = eps_end
         self.eps_steps = eps_steps
+        
+        self.render = False
+        self.screen = None
 
         self.stop_signal = False
         if render_on is not None:
@@ -241,14 +244,13 @@ class Environment(threading.Thread):
         manager = Car_handler(N_CARS)
         
         states = manager.get_states()
-        
-        R = 0
-        frame = 0
 
         for i in range(N_CARS):
             self.memories.append([])
             self.tot_rewards.append(0)
-
+        
+        R = 0
+        frame = 0
         done = False 
         
         while True:
@@ -324,7 +326,7 @@ class Environment(threading.Thread):
             for i in range(N_CARS):
                 R += rewards[i]
             
-            if self.render:
+            if self.render and frame%10 == 0:
                 background = pygame.Surface(self.screen.get_size())
                 background = background.convert()
                 background.fill(BACKGROUND_COLOR)
@@ -336,7 +338,7 @@ class Environment(threading.Thread):
             
             frame += 1
             
-            if done or self.stop_signal:
+            if done or self.stop_signal or frame > MAX_FRAMES:
                break
 
         print(R)
