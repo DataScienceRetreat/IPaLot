@@ -25,7 +25,7 @@ import random
 import math
 import numpy as np
 
-from .cfg import FROM_BOTTOM
+from .cfg import FROM_BOTTOM, WIDTH, HEIGHT
 
 class Car_handler():
     """
@@ -47,6 +47,7 @@ class Car_handler():
 
         self.current_target = []  # these two list the current starting point
         self.current_origin = [] # and target point for each car
+        self.car_is_done = [] # will stop updates on the car for the episode
 
         self.static_cars_group = pygame.sprite.Group()
         self.moving_cars_group = pygame.sprite.Group()
@@ -68,6 +69,7 @@ class Car_handler():
         # and set the moving cars
         for i in range(self.number_of_cars):
             self.target_positions.append([])
+            self.car_is_done.append(False)
             # cars will be at bottom of screen
             car_position = (
                     (i+1) * pygame.display.Info().current_w // (n+1),
@@ -130,7 +132,11 @@ class Car_handler():
             dist2 = self.get_distance(rwp,rwt)
             if ( dist1 <= 1) and ( dist2 <= 1):
                 terminal_flags[i] = True
-                self.current_target[i] = self.target_positions[i].pop()
+                if self.target_positions[i]: # if there are new targets left
+                    self.current_target[i] = self.target_positions[i].pop()
+                else:
+                    self.car_is_done[i] = True
+                    self.remove_car(i)
             
             states[i].append(player)
             states[i].append(target)            
@@ -191,6 +197,13 @@ class Car_handler():
             else:
                 return 0
             
+    def remove_car(self, i):
+        '''get car[i] out of the game window: this won't create a reset
+        because the out-of-boundary condition is checked only for cars
+        with car_is_done[i]=False'''
+        
+        if self.car_is_done[i]: # just to be sure
+            self.moving_cars[i].rect.center = 2*WIDTH , 2*HEIGHT
 #------------------------------------------------------------------------------
 
 class Filled_Lot():

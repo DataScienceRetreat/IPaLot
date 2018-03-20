@@ -237,7 +237,11 @@ class Environment(threading.Thread):
             self.screen = render_on
 
         self.memories = []
-        self.tot_rewards = [] 
+        self.tot_rewards = []
+        
+        self.stop_training = [] # a flag list: the i-th flag will get activated
+                                # when car[i] is done, to stop sending s,a,r,s'
+                                # to memory in the next frame
 
 
     def runEpisode(self): 
@@ -245,10 +249,12 @@ class Environment(threading.Thread):
 
         not_terminal = [False]*N_CARS
         states = manager.get_states(not_terminal)
+        self.stop_training = []
 
         for i in range(N_CARS):
             self.memories.append([])
             self.tot_rewards.append(0)
+            self.stop_training.append(False)
         
         R = 0
         frame = 0
@@ -291,28 +297,29 @@ class Environment(threading.Thread):
                 agent.join()
 
             for i, car in enumerate(manager.moving_cars):                
-                # check for collisions for each car          
-                collision = True                
-                if car.rect.left < 0 or car.rect.right > WIDTH:
-                    manager.reset_car(i)
-                elif car.rect.top < 0 or car.rect.bottom > HEIGHT:
-                    manager.reset_car(i)                             
-                elif pygame.sprite.spritecollide(car,
-                                           manager.static_cars_group,
-                                           False,
-                                           pygame.sprite.collide_mask):
-                    manager.reset_car(i)                
-                elif pygame.sprite.spritecollide(car,
-                                           manager.collide_with[i],
-                                           False,
-                                           pygame.sprite.collide_mask):            
-                    manager.reset_car(i)
-                else:
-                    collision = False
-                    
-                if collision:
-                    rewards[i] = -1
-                    terminal_flags[i] = True
+                # check for collisions for each car that is not done
+                if not manager.car_is_done[i]:
+                    collision = True                
+                    if car.rect.left < 0 or car.rect.right > WIDTH:
+                        manager.reset_car(i)
+                    elif car.rect.top < 0 or car.rect.bottom > HEIGHT:
+                        manager.reset_car(i)                             
+                    elif pygame.sprite.spritecollide(car,
+                                               manager.static_cars_group,
+                                               False,
+                                               pygame.sprite.collide_mask):
+                        manager.reset_car(i)                
+                    elif pygame.sprite.spritecollide(car,
+                                               manager.collide_with[i],
+                                               False,
+                                               pygame.sprite.collide_mask):            
+                        manager.reset_car(i)
+                    else:
+                        collision = False
+                        
+                    if collision:
+                        rewards[i] = -1
+                        terminal_flags[i] = True
                 
                     
                 # get one-hot enconding of the action
@@ -325,6 +332,11 @@ class Environment(threading.Thread):
             self.memory_train(states, one_hot_actions,
                               rewards, new_states, terminal_flags)
 
+            # if the get_states call gives car_is_done[i]=True for the 1st time
+            # then the next calls to self.memory_train will ignore car i
+            if manager.car_is_done[i] and not self.stop_training[i]:
+                self.stop_training[i]=True
+                
             states = new_states
             
             for i in range(N_CARS):
@@ -358,47 +370,48 @@ class Environment(threading.Thread):
     def memory_train(self, states, actions, rewards, states_, terminal_s_):
 
         for i in range(N_CARS):
-            # first push s,a,r,s' into individual memory
-            if not terminal_s_[i]:
-                self.memories[i].append( [ states[i],
-                                    actions[i],
-                                    rewards[i],
-                                    states_[i] ] )
-            else:
-                self.memories[i].append( [ states[i],
-                                    actions[i],
-                                    rewards[i],
-                                    None ] )    
+            if not self.stop_training[i]:
+                # first push s,a,r,s' into individual memory
+                if not terminal_s_[i]:
+                    self.memories[i].append( [ states[i],
+                                        actions[i],
+                                        rewards[i],
+                                        states_[i] ] )
+                else:
+                    self.memories[i].append( [ states[i],
+                                        actions[i],
+                                        rewards[i],
+                                        None ] )    
+        
+                self.tot_rewards[i] = ( self.tot_rewards[i] +
+                                        rewards[i] * GAMMA_N ) / GAMMA
     
-            self.tot_rewards[i] = ( self.tot_rewards[i] +
-                                    rewards[i] * GAMMA_N ) / GAMMA
-
-            # send everything in memory to the training queue if s' is terminal
-            if terminal_s_[i]:
-                while len(self.memories[i]) > 0:
-                    n = len(self.memories[i])
+                # send memory to the training queue if s' is terminal
+                if terminal_s_[i]:
+                    while len(self.memories[i]) > 0:
+                        n = len(self.memories[i])
+                        s, a, _, _  = self.memories[i][0]
+                        _, _, _, s_ = self.memories[i][n-1]
+                        r = self.tot_rewards[i]
+                        self.brain.train_push(s, a, r, s_)
+    
+                        self.tot_rewards[i] = ( self.tot_rewards[i]
+                                                - self.memories[i][0][2] ) / GAMMA
+                        self.memories[i].pop(0)		
+    
+                    self.tot_rewards[i] = 0
+    
+                # if enough steps have been accumulated in memory, send 
+                # an N-STEPS result to the training queue
+                if len(self.memories[i]) >= N_STEP_RETURN:
                     s, a, _, _  = self.memories[i][0]
-                    _, _, _, s_ = self.memories[i][n-1]
+                    _, _, _, s_ = self.memories[i][N_STEP_RETURN-1]
                     r = self.tot_rewards[i]
                     self.brain.train_push(s, a, r, s_)
-
+    
                     self.tot_rewards[i] = ( self.tot_rewards[i]
-                                            - self.memories[i][0][2] ) / GAMMA
-                    self.memories[i].pop(0)		
-
-                self.tot_rewards[i] = 0
-
-            # if enough steps have been accumulated in memory, send 
-            # an N-STEPS result to the training queue
-            if len(self.memories[i]) >= N_STEP_RETURN:
-                s, a, _, _  = self.memories[i][0]
-                _, _, _, s_ = self.memories[i][N_STEP_RETURN-1]
-                r = self.tot_rewards[i]
-                self.brain.train_push(s, a, r, s_)
-
-                self.tot_rewards[i] = ( self.tot_rewards[i]
-                                            - self.memories[i][0][2] )
-                self.memories[i].pop(0)
+                                                - self.memories[i][0][2] )
+                    self.memories[i].pop(0)
 
 
 #------------------------------------------------------------------------------

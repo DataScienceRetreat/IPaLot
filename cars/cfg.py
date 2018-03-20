@@ -22,3 +22,5 @@ STEER_SOFTENING = 0.2
 FROM_BOTTOM = 45
 
 
+#screen size
+WIDTH, HEIGHT = 700, 400
