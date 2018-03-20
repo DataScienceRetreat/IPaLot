@@ -97,12 +97,12 @@ class Car_handler():
             - pygame.display.Info().current_h + FROM_BOTTOM)
             )
                 
-    def get_states(self):
+    def get_states(self, terminal_flags):
         """ returns a list of states for each car to feed to policy/value NN.
         state[i] is a list [player, target, moving/static]
         ready for feeding into a multi-input NN:
         - player and target have shape (4,), the positions of the pseudowheels
-        - moving/static has shape(CAPACITY-1, 4), rect of other cars
+        - moving/static has shape(CAPACITY-1, 4, 1), rect of other cars
         a convolution with few filters will scan the 4-uples for moving/static
         """
         states = []
@@ -129,11 +129,12 @@ class Car_handler():
             dist1 = self.get_distance(fwp,fwt)
             dist2 = self.get_distance(rwp,rwt)
             if ( dist1 <= 1) and ( dist2 <= 1):
-                states[i] = None # this will be a terminal state for training
-            else:
-                states[i].append(player)
-                states[i].append(target)            
-                states[i].append(image_mov_sta)
+                terminal_flags[i] = True
+                self.current_target[i] = self.target_positions[i].pop()
+            
+            states[i].append(player)
+            states[i].append(target)            
+            states[i].append(image_mov_sta)
 
             
         return states

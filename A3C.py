@@ -242,8 +242,9 @@ class Environment(threading.Thread):
 
     def runEpisode(self): 
         manager = Car_handler(N_CARS)
-        
-        states = manager.get_states()
+
+        not_terminal = [False]*N_CARS
+        states = manager.get_states(not_terminal)
 
         for i in range(N_CARS):
             self.memories.append([])
@@ -261,12 +262,14 @@ class Environment(threading.Thread):
             actions = []
             one_hot_actions = []
             rewards = []
+            terminal_flags = []
 
             
             for i in range(N_CARS):
                 actions.append(None)
                 one_hot_actions.append(np.zeros(NUM_ACTIONS))
                 rewards.append(None)
+                terminal_flags.append(False)
                 agents.append(Agent( self.brain,
                                      manager,
                                      self.eps_start,
@@ -309,17 +312,18 @@ class Environment(threading.Thread):
                     
                 if collision:
                     rewards[i] = -1
-                    
+                    terminal_flags[i] = True
                 
                     
                 # get one-hot enconding of the action
                 one_hot_actions[i][actions[i]] = 1 
 
-            # get the new state, the manager will set terminal states to None
-            new_states = manager.get_states()
+            # get the new state, the manager will also flag terminal states
+            new_states = manager.get_states( terminal_flags )
 
             # push s,a,r,s' into each car's memory, and communicate to brain
-            self.memory_train(states, one_hot_actions, rewards, new_states)
+            self.memory_train(states, one_hot_actions,
+                              rewards, new_states, terminal_flags)
 
             states = new_states
             
@@ -351,19 +355,26 @@ class Environment(threading.Thread):
         self.stop_signal = True
         
         
-    def memory_train(self, states, actions, rewards, states_):
+    def memory_train(self, states, actions, rewards, states_, terminal_s_):
 
         for i in range(N_CARS):
             # first push s,a,r,s' into individual memory
-            self.memories[i].append( [ states[i],
+            if not terminal_s_[i]:
+                self.memories[i].append( [ states[i],
                                     actions[i],
                                     rewards[i],
                                     states_[i] ] )
+            else:
+                self.memories[i].append( [ states[i],
+                                    actions[i],
+                                    rewards[i],
+                                    None ] )    
+    
             self.tot_rewards[i] = ( self.tot_rewards[i] +
                                     rewards[i] * GAMMA_N ) / GAMMA
 
             # send everything in memory to the training queue if s' is terminal
-            if states_[i] is None:
+            if terminal_s_[i]:
                 while len(self.memories[i]) > 0:
                     n = len(self.memories[i])
                     s, a, _, _  = self.memories[i][0]
