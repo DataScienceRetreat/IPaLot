@@ -7,7 +7,7 @@ Created on Sat Mar 17 10:30:44 2018
 """
 
 # number of moving cars per episode
-N_CARS = 4
+N_CARS = 1
 
 # constants for car physics
 MAXSPEED = 2

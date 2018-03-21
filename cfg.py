@@ -7,7 +7,7 @@ Created on Sat Mar 17 10:30:44 2018
 """
 
 # number of moving cars per episode
-N_CARS = 4
+N_CARS = 1
 
 # number of threads
 OPTIMIZERS = 2
@@ -34,13 +34,13 @@ GAMMA = 1
 N_STEP_RETURN = 5
 GAMMA_N = GAMMA ** N_STEP_RETURN
 
-EPS_START = 1 # 0.4
-EPS_STOP  = 1 # .15
-EPS_STEPS = 1e10
+EPS_START = 1
+EPS_STOP  = 0.3
+EPS_STEPS = 1e4
 
 THREAD_DELAY = 0.001
 
-MAX_FRAMES = 1000
+MAX_FRAMES = 10000
 
 # bkg color
 BACKGROUND_COLOR = (50, 50, 50)

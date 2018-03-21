@@ -492,11 +492,12 @@ class Agent(threading.Thread):
         if(a == NUM_ACTIONS-1): # the last action is the 'do nothing' one
             reward = 0  # so cars don't just seat there accumulating reward
         else:
+            CONST = 2*WIDTH + HEIGHT
             reward = (
-                    min((1.0/(dist1 + 1e-10)), 1) +
-                    min((1.0/(dist2 + 1e-10)), 1)
+                    max((CONST-dist1)/(2*CONST), 0) +
+                    max((CONST-dist2)/(2*CONST), 0)
                     )
-                    # when car is in place the reward is not 1e10 but just 1
+                    # linear potential between 0 and 1
                     
         self.reward_list[self.i] = reward
             
