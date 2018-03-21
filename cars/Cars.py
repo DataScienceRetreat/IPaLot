@@ -67,6 +67,8 @@ class Car(pygame.sprite.Sprite):
                     5 : [self.deaccelerate, self.steerright],
                     6 : [self.soften, self.steer_soften]
                     }
+        # note: keep the last action the 'do nothing' one
+        # as the reward is set to 0 for that 
 
     def act(self, index):
         for func in self.action_list[index]:

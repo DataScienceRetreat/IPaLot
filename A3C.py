@@ -276,7 +276,6 @@ class Environment(threading.Thread):
             one_hot_actions = []
             rewards = []
             terminal_flags = []
-
             
             for i in range(N_CARS):
                 actions.append(None)
@@ -358,6 +357,11 @@ class Environment(threading.Thread):
                 self.screen.blit(background, (0, 0))
                 manager.moving_cars_group.draw(self.screen)
                 manager.static_cars_group.draw(self.screen)
+                pygame.draw.lines(self.screen,
+                                  (0,0,0),
+                                  False,
+                                  manager.path_list,
+                                  3)
                    
                 pygame.display.flip()
             
@@ -481,10 +485,19 @@ class Agent(threading.Thread):
         rwp = self.car.get_rearwheel(negative_y = False)
         fwt = self.manager.current_target[self.i][0]
         rwt = self.manager.current_target[self.i][1]
-        dist1 = self.manager.get_distance(fwp,fwt)
+        dist1 = self.manager.get_distance(fwp,fwt, drawpath=(self.i == 0))
         dist2 = self.manager.get_distance(rwp,rwt)
-        reward = min( (1.0/(dist1 + 1e-10) + 1.0/(dist2 + 1e-10)), 2)
-            # when car is in place reward is not 2e10 but just 1
+        
+        
+        if(a == NUM_ACTIONS-1): # the last action is the 'do nothing' one
+            reward = 0  # so cars don't just seat there accumulating reward
+        else:
+            reward = (
+                    min((1.0/(dist1 + 1e-10)), 1) +
+                    min((1.0/(dist2 + 1e-10)), 1)
+                    )
+                    # when car is in place the reward is not 1e10 but just 1
+                    
         self.reward_list[self.i] = reward
             
     def stop(self):

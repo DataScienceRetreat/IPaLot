@@ -55,7 +55,9 @@ class Car_handler():
         self.A = self.lot.A
         self.B = self.lot.B
         self.C = self.lot.C
-        self.D = self.lot.D        
+        self.D = self.lot.D
+
+        self.path_list = []        
         
         # now sample n indexes in len(lot.static_cars_list) in order to
         # create the target parking spots (get_spot in the following loop)
@@ -161,7 +163,7 @@ class Car_handler():
             
         return states
     
-    def get_distance(self, p1, p2):
+    def get_distance(self, p1, p2, drawpath=False):
         ''' Based on a zone division of the lot, returns a shortest path
         between two points avoiding the self.lot cars. The division goes
         as follows:
@@ -178,6 +180,7 @@ class Car_handler():
         and so on.
         The general idea is that cars go anticlockwise around the lot
         to reach a destination point
+        (drawpath is for testing only)
         '''
         distance = 0
         # first determine the zones of p1, p2
@@ -189,15 +192,23 @@ class Car_handler():
 
         if z1 == z2:
             distance = math.hypot(p1[0]-p2[0], p1[1]-p2[1])
+            if drawpath:
+                self.path_list = [p1, p2]
         else:
+            if drawpath:
+                self.path_list = [p1]
             while z1 != z2:
                 distance += math.hypot(p1[0]-abcd[z1][0], p1[1]-abcd[z1][1])
                 p1 = abcd[z1]
                 z1 = (z1+1)%4 # this way if z1 was > z2 to start with, then
                               # the car will just go around anticlockwise
                               # until z1=z2, without index errors
+                if drawpath:
+                    self.path_list.append(p1)
                 
             distance += math.hypot(p1[0]-p2[0], p1[1]-p2[1])
+            if drawpath:
+                self.path_list.append(p2)
                 
         return distance
     
