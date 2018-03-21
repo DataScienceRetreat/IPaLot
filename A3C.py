@@ -242,6 +242,10 @@ class Environment(threading.Thread):
         self.stop_training = [] # a flag list: the i-th flag will get activated
                                 # when car[i] is done, to stop sending s,a,r,s'
                                 # to memory in the next frame
+                                
+        self.lock_queue = threading.Lock() # lock to access event queue
+
+        self.train = True # allow to switch-off training is set to false
 
 
     def runEpisode(self): 
@@ -250,6 +254,7 @@ class Environment(threading.Thread):
         not_terminal = [False]*N_CARS
         states = manager.get_states(not_terminal)
         self.stop_training = []
+        self.tot_rewards = []
 
         for i in range(N_CARS):
             self.memories.append([])
@@ -261,6 +266,8 @@ class Environment(threading.Thread):
         done = False 
         
         while True:
+            with self.lock_queue:
+                pygame.event.pump() # ensure pygame interacts correctly with OS
 
             time.sleep(THREAD_DELAY) # yield 
             
@@ -320,6 +327,7 @@ class Environment(threading.Thread):
                     if collision:
                         rewards[i] = -1
                         terminal_flags[i] = True
+                        done = True # stop the episode even for 1 collision
                 
                     
                 # get one-hot enconding of the action
@@ -329,7 +337,8 @@ class Environment(threading.Thread):
             new_states = manager.get_states( terminal_flags )
 
             # push s,a,r,s' into each car's memory, and communicate to brain
-            self.memory_train(states, one_hot_actions,
+            if self.train:
+                self.memory_train(states, one_hot_actions,
                               rewards, new_states, terminal_flags)
 
             # if the get_states call gives car_is_done[i]=True for the 1st time
@@ -396,7 +405,7 @@ class Environment(threading.Thread):
                         self.brain.train_push(s, a, r, s_)
     
                         self.tot_rewards[i] = ( self.tot_rewards[i]
-                                                - self.memories[i][0][2] ) / GAMMA
+                                    - self.memories[i][0][2] ) / GAMMA
                         self.memories[i].pop(0)		
     
                     self.tot_rewards[i] = 0

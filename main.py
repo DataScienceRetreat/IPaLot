@@ -33,6 +33,9 @@ def main():
     #render for env[0]
     environments[0].render = True
     environments[0].screen = screen
+    environments[0].eps_start = 0 # render a greedy policy environment
+    environments[0].eps_end = 0
+    environments[0].train = False # do not learn from the greedy bastard
 
     for o in optimizers:
         o.start()
