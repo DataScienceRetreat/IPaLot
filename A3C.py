@@ -375,7 +375,7 @@ class Environment(threading.Thread):
                break
         
         # print the episode reward averaged over cars
-        print(np.mean(R))
+        print(np.mean(R), flush=True)
 
     def run(self):
         while not self.stop_signal:

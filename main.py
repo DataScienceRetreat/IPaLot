@@ -8,7 +8,7 @@ Created on Sat Feb 10 13:26:37 2018
 import pygame
 from A3C import Brain, Optimizer, Environment
 from cfg import OPTIMIZERS, WIDTH, HEIGHT, ENVIRONMENTS
-import time
+import time, sys
 
 
 def main():
@@ -29,6 +29,7 @@ def main():
     brain = Brain()
     optimizers = [Optimizer(brain) for i in range(OPTIMIZERS)]
     environments = [Environment(brain) for i in range(ENVIRONMENTS)]
+    sys.stdout = open('rewards.txt', 'w')
 
     #render for env[0]
     environments[0].render = True
