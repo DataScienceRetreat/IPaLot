@@ -8,3 +8,8 @@ designated parking spot.
 Here you can find the training simulation, working on pygame.
 The training method used is a multi-agent version of the A3C model.
 
+##### Installing with conda
+
+* conda create --name myenv python=3.6.3
+* conda activate myenv
+* pip install -r requirements.txt
