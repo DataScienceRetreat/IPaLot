@@ -255,13 +255,16 @@ class Environment(threading.Thread):
         states = manager.get_states(not_terminal)
         self.stop_training = []
         self.tot_rewards = []
+        manager.last_distances = []
+        R = []
 
         for i in range(N_CARS):
+            manager.last_distances.append([])
             self.memories.append([])
             self.tot_rewards.append(0)
             self.stop_training.append(False)
-        
-        R = 0
+            R.append(0)
+            
         frame = 0
         done = False 
         
@@ -288,7 +291,7 @@ class Environment(threading.Thread):
                                      self.eps_end,
                                      self.eps_steps,
                                      states[i],
-                                     actions, i, # we will write on action[i]
+                                     actions, i, # will write on action[i]
                                      rewards     # will write on rewards[i]
                                      )
                                 )
@@ -324,7 +327,8 @@ class Environment(threading.Thread):
                         collision = False
                         
                     if collision:
-                        rewards[i] = -1
+                        rewards[i] = 0
+                        R[i] = 0
                         terminal_flags[i] = True
                         done = True # stop the episode even for 1 collision
                 
@@ -348,7 +352,7 @@ class Environment(threading.Thread):
             states = new_states
             
             for i in range(N_CARS):
-                R += rewards[i]
+                R[i] += rewards[i]
             
             if self.render and frame%10 == 0:
                 background = pygame.Surface(self.screen.get_size())
@@ -369,8 +373,9 @@ class Environment(threading.Thread):
             
             if done or self.stop_signal or frame > MAX_FRAMES:
                break
-
-        print(R)
+        
+        # print the episode reward averaged over cars
+        print(np.mean(R))
 
     def run(self):
         while not self.stop_signal:
@@ -463,7 +468,8 @@ class Agent(threading.Thread):
         '''each agent will compute a[i] = pi(s[i]), act on car[i],
         and compute a temporary reward based on distance, neglecting
         collisions'''
-            
+        
+        # get new action according to epsilon-greedy policy
         if random.random() < self.epsilon:
             a = random.randint(0, NUM_ACTIONS-1)
         else:
@@ -473,33 +479,73 @@ class Agent(threading.Thread):
                 s.append(np.array( [ inpt ] ))
             #get policy 
             p = self.brain.predict_p(s)[0]
-                            # the [0] is once again just for shape reasons
-            a = np.random.choice(NUM_ACTIONS, p=p)
+                # the [0] is once again just for shape reasons
+
+            # a = np.random.choice(NUM_ACTIONS, p=p)
+                # for mathematicians
+            a = np.argmax(p)
+                # other kind of nerd
         
         # act and save action in the list for external access
         self.car.act(a)
         self.action_list[self.i] = a
         
-        # now get distance-based reward
+        # finally get the distance-based reward            
+        self.reward_list[self.i] = self.get_current_reward()
+        
+            
+    def get_current_reward(self):
+        '''calculate the reward r based on distance, using a linear potential.
+            The potential increases from 0 to 1 as the car gets closer to the
+            target; r is such that when updating the total reward R+=r then R
+            will be the highest potential experienced so far'''
+            
+        reward = 0 # no increase if the distances are larger than saved ones
+            
+        # get current distances player-target
         fwp = self.car.get_frontwheel(negative_y = False)
         rwp = self.car.get_rearwheel(negative_y = False)
         fwt = self.manager.current_target[self.i][0]
         rwt = self.manager.current_target[self.i][1]
-        dist1 = self.manager.get_distance(fwp,fwt, drawpath=(self.i == 0))
-        dist2 = self.manager.get_distance(rwp,rwt)
-        
-        
-        if(a == NUM_ACTIONS-1): # the last action is the 'do nothing' one
-            reward = 0  # so cars don't just seat there accumulating reward
+        dist0= self.manager.get_distance(fwp,fwt) 
+        dist1= self.manager.get_distance(rwp,rwt, drawpath=(self.i == 0))
+
+        # if such distances are less then the ones in memory, then update
+        if self.manager.last_distances[self.i]:        
+            if dist0 < self.manager.last_distances[self.i][0]:
+                current_R = potential(
+                        self.manager.last_distances[self.i][0]
+                        )
+                updated_R = potential(dist0)
+                reward += updated_R - current_R
+                self.manager.last_distances[self.i][0] = dist0        
+
+            if dist1 < self.manager.last_distances[self.i][1]:
+                current_R = potential(
+                        self.manager.last_distances[self.i][1]
+                        )
+                updated_R = potential(dist1)
+                reward += updated_R - current_R
+                self.manager.last_distances[self.i][1] = dist1  
+
         else:
-            CONST = 2*WIDTH + HEIGHT
-            reward = (
-                    max((CONST-dist1)/(2*CONST), 0) +
-                    max((CONST-dist2)/(2*CONST), 0)
-                    )
-                    # linear potential between 0 and 1
-                    
-        self.reward_list[self.i] = reward
-            
+            # if a new target has just been set
+            self.manager.last_distances[self.i].append(dist0)
+            self.manager.last_distances[self.i].append(dist1)
+
+        return reward
+    
     def stop(self):
         self.stop_signal = True
+        
+        
+#------------------------------------------------------------------------------
+        
+def potential(r):
+    '''Auxiliary function that returns the distance based linear
+    potential for reward engineering: it linearly increases
+    from 0 to 1/2 between r=CONST and r=0, so that when both the 
+    peusowheels are on target the total potential is 1/2 + 1/2 = 1 '''
+
+    CONST = 2*WIDTH + HEIGHT
+    return max((CONST-r)/(2*CONST), 0)

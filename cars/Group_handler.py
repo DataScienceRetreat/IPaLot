@@ -48,6 +48,8 @@ class Car_handler():
         self.current_target = []  # these two list the current starting point
         self.current_origin = [] # and target point for each car
         self.car_is_done = [] # will stop updates on the car for the episode
+        
+        self.last_distances = [] # the closest distances so far from target
 
         self.static_cars_group = pygame.sprite.Group()
         self.moving_cars_group = pygame.sprite.Group()
@@ -152,6 +154,7 @@ class Car_handler():
                 terminal_flags[i] = True
                 if self.target_positions[i]: # if there are new targets left
                     self.current_target[i] = self.target_positions[i].pop()
+                    self.last_distances[i] = []
                 else:
                     self.car_is_done[i] = True
                     self.remove_car(i)
@@ -180,7 +183,7 @@ class Car_handler():
         and so on.
         The general idea is that cars go anticlockwise around the lot
         to reach a destination point
-        (drawpath is for testing only)
+        (drawpath is for printing the path on screen)
         '''
         distance = 0
         # first determine the zones of p1, p2
@@ -293,8 +296,8 @@ class Filled_Lot():
                 self.static_cars_list.append(car2)            
             dx += delta
             if i == n-2:
-                self.B = car1.rect.bottomright
-                self.C = car2.rect.bottomleft
+                self.B = car1.rect.topright
+                self.C = car2.rect.topleft
             
             
     def get_spot(self, car, index, target_list):
