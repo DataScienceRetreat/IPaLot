@@ -23,8 +23,8 @@ is where the total number of cars 29+1 comes from'''
 
 NUM_ACTIONS=7
 
-MIN_BATCH = 32
-LEARNING_RATE = 5e-3
+MIN_BATCH = 64
+LEARNING_RATE = 1e-3
 
 LOSS_V = .5			# v loss coefficient
 LOSS_ENTROPY = .01 	# entropy coefficient
@@ -41,6 +41,9 @@ EPS_STEPS = 4e6
 THREAD_DELAY = 0.001
 
 MAX_FRAMES = 10000
+
+# Epochs between saving the weights
+EPOCHS_PER_SAVE = 50 
 
 # bkg color
 BACKGROUND_COLOR = (50, 50, 50)

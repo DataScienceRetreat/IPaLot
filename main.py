@@ -26,7 +26,7 @@ def main():
     pygame.display.flip()
 
 # Initialise brain, optimizer threads, and environment threads
-    brain = Brain()
+    brain = Brain(load_weights=True)
     optimizers = [Optimizer(brain) for i in range(OPTIMIZERS)]
     environments = [Environment(brain) for i in range(ENVIRONMENTS)]
     sys.stdout = open('rewards.txt', 'w')

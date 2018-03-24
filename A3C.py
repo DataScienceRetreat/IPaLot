@@ -9,7 +9,8 @@ https://github.com/jaara/AI-blog/blob/master/CartPole-A3C.py
 
 
 class Brain():
-    sets up the NN predicting policy/value for A3C 
+    sets up the NN predicting policy/value for A3C
+    saves the weights every EPOCHS_PER_SAVE epochs
 
 class Optimizer{threading.Thread}(brain):
     sets up optimizer threads executing brain.optimize() for the global brain
@@ -39,20 +40,22 @@ from cars.Group_handler import Car_handler
 from cfg import INPUT_SHAPE, NONE_STATE, NUM_ACTIONS, MIN_BATCH, LEARNING_RATE
 from cfg import LOSS_V, LOSS_ENTROPY, GAMMA_N, EPS_START, EPS_STOP, EPS_STEPS
 from cfg import THREAD_DELAY, N_CARS, BACKGROUND_COLOR, WIDTH, HEIGHT, GAMMA
-from cfg import N_STEP_RETURN, MAX_FRAMES
+from cfg import N_STEP_RETURN, MAX_FRAMES, EPOCHS_PER_SAVE
 
 #------------------------------------------------------------------------------
 class Brain():
-    def __init__(self):
+    def __init__(self, load_weights=False):
         self.train_queue = [ [], [], [], [], [] ]
         # s, a, r, s', s' terminal mask
         
         self.counter = 0 # update every time it trains,
-                         # used to decrese epsilon, for e-greedy policy
+                         # used to decrese epsilon, and saving weights
         self.lock_queue = threading.Lock()        
         self.session = tf.Session()
         K.set_session(self.session)
         K.manual_variable_initialization(True)
+        
+        self.load_weights=load_weights
 
         self.model = self._build_model()
         self.graph = self._build_graph(self.model)
@@ -96,6 +99,9 @@ class Brain():
                 outputs=[policy, value]
                 )
         model._make_predict_function()	# have to initialize before threading
+        
+        if self.load_weights:
+            model.load_weights('brain_weights.h5')
         
         model.summary()
 
@@ -167,6 +173,8 @@ class Brain():
         self.session.run(minimize,
                 feed_dict={s1_t: s1, s2_t: s2, s3_t: s3, a_t: a, r_t: r}
                 )
+        if (self.counter % EPOCHS_PER_SAVE) == 0:
+            self.model.save('brain_weights.h5')
 
     def train_push(self, s, a, r, s_):
         with self.lock_queue:
