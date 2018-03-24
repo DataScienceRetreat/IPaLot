@@ -17,7 +17,7 @@ def main():
     size = WIDTH, HEIGHT
     pygame.init()
     screen = pygame.display.set_mode(size)
-    pygame.display.set_caption('Basic parking traing')
+    pygame.display.set_caption('Basic parking training')
     background = pygame.Surface(screen.get_size())
     background = background.convert()
     color = (50, 50, 50)
@@ -36,7 +36,10 @@ def main():
     environments[0].screen = screen
     environments[0].eps_start = 0 # render a greedy policy environment
     environments[0].eps_end = 0
-    environments[0].train = False # do not learn from the greedy bastard
+#    environments[0].train = False # do not learn from the greedy bastard
+    
+    # write down episode rewards only for env[0]
+    environments[0].verbose = True
 
     for o in optimizers:
         o.start()

@@ -7,7 +7,7 @@ Created on Sat Mar 17 10:30:44 2018
 """
 
 # number of moving cars per episode
-N_CARS = 4
+N_CARS = 1
 
 # number of threads
 OPTIMIZERS = 2
@@ -31,12 +31,12 @@ LOSS_ENTROPY = .01 	# entropy coefficient
 
 GAMMA = 0.99
 
-N_STEP_RETURN = 1
+N_STEP_RETURN = 5
 GAMMA_N = GAMMA ** N_STEP_RETURN
 
-EPS_START = 1
-EPS_STOP  = 0.3
-EPS_STEPS = 1e4
+EPS_START = 0.4
+EPS_STOP  = 0.1
+EPS_STEPS = 4e6
 
 THREAD_DELAY = 0.001
 

@@ -15,7 +15,7 @@ class Optimizer{threading.Thread}(brain):
     sets up optimizer threads executing brain.optimize() for the global brain
 
 class Environment{threading.Thread}(brain, render_on=None, eps_start=EPS_START,
-                 eps_end=EPS_STOP, eps_steps=EPS_STEPS):
+                 eps_end=EPS_STOP, eps_steps=EPS_STEPS, verbose=False):
     each environment will run episodes with N_CARS agents, update the state
     at each frame, get the N_CARS rewards, and push the experience on the
     training queue
@@ -218,7 +218,7 @@ class Optimizer(threading.Thread):
 class Environment(threading.Thread):
 
     def __init__(self, brain, render_on=None, eps_start=EPS_START,
-                 eps_end=EPS_STOP, eps_steps=EPS_STEPS):
+                 eps_end=EPS_STOP, eps_steps=EPS_STEPS, verbose=False):
         
         threading.Thread.__init__(self)
         
@@ -246,7 +246,7 @@ class Environment(threading.Thread):
         self.lock_queue = threading.Lock() # lock to access event queue
 
         self.train = True # allow to switch-off training is set to false
-
+        self.verbose = verbose
 
     def runEpisode(self): 
         manager = Car_handler(N_CARS)
@@ -327,8 +327,7 @@ class Environment(threading.Thread):
                         collision = False
                         
                     if collision:
-                        rewards[i] = 0
-                        R[i] = 0
+                        rewards[i] = -1
                         terminal_flags[i] = True
                         done = True # stop the episode even for 1 collision
                 
@@ -375,7 +374,8 @@ class Environment(threading.Thread):
                break
         
         # print the episode reward averaged over cars
-        print(np.mean(R), flush=True)
+        if self.verbose:
+            print(np.mean(R), flush=True)
 
     def run(self):
         while not self.stop_signal:
@@ -498,9 +498,9 @@ class Agent(threading.Thread):
         '''calculate the reward r based on distance, using a linear potential.
             The potential increases from 0 to 1 as the car gets closer to the
             target; r is such that when updating the total reward R+=r then R
-            will be the highest potential experienced so far'''
-            
-        reward = 0 # no increase if the distances are larger than saved ones
+            will be the potential in the newly reached position'''
+
+        reward = 0
             
         # get current distances player-target
         fwp = self.car.get_frontwheel(negative_y = False)
@@ -510,26 +510,25 @@ class Agent(threading.Thread):
         dist0= self.manager.get_distance(fwp,fwt) 
         dist1= self.manager.get_distance(rwp,rwt, drawpath=(self.i == 0))
 
-        # if such distances are less then the ones in memory, then update
-        if self.manager.last_distances[self.i]:        
-            if dist0 < self.manager.last_distances[self.i][0]:
-                current_R = potential(
-                        self.manager.last_distances[self.i][0]
-                        )
-                updated_R = potential(dist0)
-                reward += updated_R - current_R
-                self.manager.last_distances[self.i][0] = dist0        
-
-            if dist1 < self.manager.last_distances[self.i][1]:
-                current_R = potential(
-                        self.manager.last_distances[self.i][1]
-                        )
-                updated_R = potential(dist1)
-                reward += updated_R - current_R
-                self.manager.last_distances[self.i][1] = dist1  
+        if self.manager.last_distances[self.i]:
+        # if this is not the first step after acquiring a new target
+        
+            # update front wheel potential and distance
+            previous_R = potential( self.manager.last_distances[self.i][0])
+            updated_R = potential(dist0)
+            reward += updated_R - previous_R
+                # it will be negative if the car is moving away from the target
+            self.manager.last_distances[self.i][0] = dist0        
+            
+            # repeat for rear wheel
+            previous_R = potential(self.manager.last_distances[self.i][1])
+            updated_R = potential(dist1)
+            reward += updated_R - previous_R
+            self.manager.last_distances[self.i][1] = dist1  
 
         else:
-            # if a new target has just been set
+        # if a new target has just been set just save the distances
+        
             self.manager.last_distances[self.i].append(dist0)
             self.manager.last_distances[self.i].append(dist1)
 

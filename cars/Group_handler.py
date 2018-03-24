@@ -49,7 +49,7 @@ class Car_handler():
         self.current_origin = [] # and target point for each car
         self.car_is_done = [] # will stop updates on the car for the episode
         
-        self.last_distances = [] # the closest distances so far from target
+        self.last_distances = [] # save last distances from target
 
         self.static_cars_group = pygame.sprite.Group()
         self.moving_cars_group = pygame.sprite.Group()
