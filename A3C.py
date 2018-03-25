@@ -532,20 +532,24 @@ class Agent(threading.Thread):
         rwt = self.manager.current_target[self.i][1]
         dist0= self.manager.get_distance(fwp,fwt) 
         dist1= self.manager.get_distance(rwp,rwt, drawpath=(self.i == 0))
+        
+        # retrieve constants for the potential
+        c0 = self.manager.const[self.i][0]
+        c1 = self.manager.const[self.i][1]
 
         if self.manager.last_distances[self.i]:
         # if this is not the first step after acquiring a new target
         
             # update front wheel potential and distance
-            previous_R = potential( self.manager.last_distances[self.i][0] )
-            updated_R = potential(dist0)
+            previous_R = potential(self.manager.last_distances[self.i][0], c0)
+            updated_R = potential(dist0, c0)
             reward += updated_R - previous_R
                 # it will be negative if the car is moving away from the target
             self.manager.last_distances[self.i][0] = dist0        
             
             # repeat for rear wheel
-            previous_R = potential( self.manager.last_distances[self.i][1] )
-            updated_R = potential(dist1)
+            previous_R = potential(self.manager.last_distances[self.i][1], c1)
+            updated_R = potential(dist1, c1)
             reward += updated_R - previous_R
             self.manager.last_distances[self.i][1] = dist1  
 
@@ -554,7 +558,8 @@ class Agent(threading.Thread):
         
             self.manager.last_distances[self.i].append(dist0)
             self.manager.last_distances[self.i].append(dist1)
-            reward = potential(dist0)+potential(dist1)
+            self.manager.const[self.i][0] = dist0
+            self.manager.const[self.i][1] = dist1
 
         return reward
     
@@ -564,11 +569,10 @@ class Agent(threading.Thread):
         
 #------------------------------------------------------------------------------
         
-def potential(r):
+def potential(r, const):
     '''Auxiliary function that returns the distance based linear
     potential for reward engineering: it linearly increases
-    from 0 to 1/2 between r=CONST and r=0, so that when both the 
+    from 0 to 1/2 between r=const and r=0, so that when both the 
     peusowheels are on target the total potential is 1/2 + 1/2 = 1 '''
 
-    CONST = 2*WIDTH + HEIGHT
-    return max((CONST-r)/(2*CONST), 0)
+    return (const-r)/(2*const)

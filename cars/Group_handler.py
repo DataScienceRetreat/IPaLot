@@ -59,7 +59,9 @@ class Car_handler():
         self.C = self.lot.C
         self.D = self.lot.D
 
-        self.path_list = []        
+        self.path_list = []
+
+        self.const = [] # constants to be called by agents to calculate rewards       
         
         # now sample n indexes in len(lot.static_cars_list) in order to
         # create the target parking spots (get_spot in the following loop)
@@ -89,6 +91,8 @@ class Car_handler():
             # create parking spot and save target positions
             self.lot.get_spot(car, index[i], self.target_positions[i])
             self.current_target.append(self.target_positions[i].pop())
+
+            self.const.append([1,1]) # init for reward constants
             
             
         # add each car to the colliding group of the other cars 

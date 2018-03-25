@@ -11,7 +11,7 @@ N_CARS = 1
 
 # number of threads
 OPTIMIZERS = 2
-ENVIRONMENTS = 4
+ENVIRONMENTS = 8
 
 #-- constants for A3C
 import numpy as np
@@ -31,7 +31,7 @@ LOSS_ENTROPY = .01 	# entropy coefficient
 
 GAMMA = 0.99
 
-N_STEP_RETURN = 5
+N_STEP_RETURN = 1
 GAMMA_N = GAMMA ** N_STEP_RETURN
 
 EPS_START = 0.4
