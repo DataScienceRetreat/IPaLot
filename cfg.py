@@ -23,7 +23,7 @@ is where the total number of cars 29+1 comes from'''
 
 NUM_ACTIONS=7
 
-MIN_BATCH = 128
+MIN_BATCH = 256
 LEARNING_RATE = 1e-3
 
 LOSS_V = .5			# v loss coefficient

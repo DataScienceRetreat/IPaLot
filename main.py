@@ -24,6 +24,7 @@ def main():
     background.fill(color)
     screen.blit(background, (0, 0))
     pygame.display.flip()
+    pygame.font.init()
 
 # Initialise brain, optimizer threads, and environment threads
 #    brain = Brain(load_weights=True)
@@ -53,7 +54,7 @@ def main():
         e.start()
 
 # Then train for a fixed time
-    time.sleep(200)
+    time.sleep(600)
         
     for o in optimizers:
         o.stop()

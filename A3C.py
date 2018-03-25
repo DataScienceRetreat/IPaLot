@@ -340,7 +340,9 @@ class Environment(threading.Thread):
                         collision = False
                         
                     if collision:
-                        rewards[i] = -1
+                        rewards[i] = 0
+                        # so that the updated R will show last potential
+                        
                         terminal_flags[i] = True
                         done = True # stop the episode even for 1 collision
                 
@@ -378,6 +380,7 @@ class Environment(threading.Thread):
                                   False,
                                   manager.path_list,
                                   3)
+                self.render_reward(R[0]) # print the current reward for car[0]
                    
                 pygame.display.flip()
             
@@ -443,6 +446,13 @@ class Environment(threading.Thread):
                     self.tot_rewards[i] = ( self.tot_rewards[i]
                                                 - self.memories[i][0][2] )
                     self.memories[i].pop(0)
+                    
+    def render_reward(self, number):
+        font = pygame.font.Font(None, 36)
+        text = '{:.4f}'.format(number)
+        text_surface = font.render(text, True, (200, 155, 155))
+        text_pos = text_surface.get_rect(centerx=self.screen.get_width()/2)
+        self.screen.blit(text_surface, text_pos)
 
 
 #------------------------------------------------------------------------------
@@ -494,9 +504,9 @@ class Agent(threading.Thread):
             p = self.brain.predict_p(s)[0]
                 # the [0] is once again just for shape reasons
 
-            # a = np.random.choice(NUM_ACTIONS, p=p)
+            a = np.random.choice(NUM_ACTIONS, p=p)
                 # for mathematicians
-            a = np.argmax(p)
+            # a = np.argmax(p)
                 # other kind of nerd
         
         # act and save action in the list for external access
@@ -544,6 +554,7 @@ class Agent(threading.Thread):
         
             self.manager.last_distances[self.i].append(dist0)
             self.manager.last_distances[self.i].append(dist1)
+            reward = potential(dist0)+potential(dist1)
 
         return reward
     
