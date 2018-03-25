@@ -23,7 +23,7 @@ is where the total number of cars 29+1 comes from'''
 
 NUM_ACTIONS=7
 
-MIN_BATCH = 64
+MIN_BATCH = 128
 LEARNING_RATE = 1e-3
 
 LOSS_V = .5			# v loss coefficient
@@ -43,7 +43,7 @@ THREAD_DELAY = 0.001
 MAX_FRAMES = 10000
 
 # Epochs between saving the weights
-EPOCHS_PER_SAVE = 50 
+EPOCHS_PER_SAVE = 1000 
 
 # bkg color
 BACKGROUND_COLOR = (50, 50, 50)

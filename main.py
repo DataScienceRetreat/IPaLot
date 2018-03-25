@@ -26,7 +26,8 @@ def main():
     pygame.display.flip()
 
 # Initialise brain, optimizer threads, and environment threads
-    brain = Brain(load_weights=True)
+#    brain = Brain(load_weights=True)
+    brain = Brain()
     optimizers = [Optimizer(brain) for i in range(OPTIMIZERS)]
     environments = [Environment(brain) for i in range(ENVIRONMENTS)]
     sys.stdout = open('rewards.txt', 'w')
@@ -34,8 +35,12 @@ def main():
     #render for env[0]
     environments[0].render = True
     environments[0].screen = screen
+    
+# get 1 greedy env and 1 completely random    
     environments[0].eps_start = 0 # render a greedy policy environment
     environments[0].eps_end = 0
+    environments[1].eps_start = 1 
+    environments[1].eps_end = 1   
 #    environments[0].train = False # do not learn from the greedy bastard
     
     # write down episode rewards only for env[0]
@@ -48,7 +53,7 @@ def main():
         e.start()
 
 # Then train for a fixed time
-    time.sleep(100)
+    time.sleep(200)
         
     for o in optimizers:
         o.stop()

@@ -101,7 +101,7 @@ class Brain():
         model._make_predict_function()	# have to initialize before threading
         
         if self.load_weights:
-            model.load_weights('brain_weights.h5')
+            model.load_weights('weights/brain_weights.h5')
         
         model.summary()
 
@@ -144,7 +144,6 @@ class Brain():
             if len(self.train_queue[0]) < MIN_BATCH:	# more thread could have passed without lock
                 return 									# we can't yield inside lock
 
-            self.counter += 1
             s, a, r, s_, s_mask = self.train_queue
             self.train_queue = [ [], [], [], [], [] ]
 
@@ -173,8 +172,16 @@ class Brain():
         self.session.run(minimize,
                 feed_dict={s1_t: s1, s2_t: s2, s3_t: s3, a_t: a, r_t: r}
                 )
-        if (self.counter % EPOCHS_PER_SAVE) == 0:
-            self.model.save('brain_weights.h5')
+        with self.lock_queue:
+            self.counter += 1
+            if (self.counter % EPOCHS_PER_SAVE) == 0:
+                self.model.save('weights/brain_weights.h5')
+                filename = 'weights/weights_' + str(
+                        self.counter) + '_' + time.strftime(
+                                "%m_%d_%H-%M-%S", time.gmtime()) + '.h5'
+                self.model.save(filename)            
+            # save twice, once on the file that keeps being overwritten, once
+            # on a dated file (to retrieve if the system stops learning later)
 
     def train_push(self, s, a, r, s_):
         with self.lock_queue:
@@ -243,9 +250,6 @@ class Environment(threading.Thread):
         if render_on is not None:
             self.render = True
             self.screen = render_on
-
-        self.memories = []
-        self.tot_rewards = []
         
         self.stop_training = [] # a flag list: the i-th flag will get activated
                                 # when car[i] is done, to stop sending s,a,r,s'
@@ -265,6 +269,7 @@ class Environment(threading.Thread):
         self.tot_rewards = []
         manager.last_distances = []
         R = []
+        self.memories = []
 
         for i in range(N_CARS):
             manager.last_distances.append([])
@@ -522,14 +527,14 @@ class Agent(threading.Thread):
         # if this is not the first step after acquiring a new target
         
             # update front wheel potential and distance
-            previous_R = potential( self.manager.last_distances[self.i][0])
+            previous_R = potential( self.manager.last_distances[self.i][0] )
             updated_R = potential(dist0)
             reward += updated_R - previous_R
                 # it will be negative if the car is moving away from the target
             self.manager.last_distances[self.i][0] = dist0        
             
             # repeat for rear wheel
-            previous_R = potential(self.manager.last_distances[self.i][1])
+            previous_R = potential( self.manager.last_distances[self.i][1] )
             updated_R = potential(dist1)
             reward += updated_R - previous_R
             self.manager.last_distances[self.i][1] = dist1  
