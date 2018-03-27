@@ -27,7 +27,7 @@ MIN_BATCH = 256
 LEARNING_RATE = 1e-3
 
 LOSS_V = .5			# v loss coefficient
-LOSS_ENTROPY = .01 	# entropy coefficient
+LOSS_ENTROPY = .0001 	# entropy coefficient
 
 GAMMA = 0.99
 
@@ -36,7 +36,7 @@ GAMMA_N = GAMMA ** N_STEP_RETURN
 
 EPS_START = 0.4
 EPS_STOP  = 0.1
-EPS_STEPS = 4e6
+EPS_STEPS = 5e6
 
 THREAD_DELAY = 0.001
 

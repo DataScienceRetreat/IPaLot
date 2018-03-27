@@ -36,6 +36,7 @@ import keras.models as models
 import keras.layers as layers
 from keras import backend as K
 from cars.Group_handler import Car_handler
+#from keras.layers.advanced_activations import PReLU
 
 from cfg import INPUT_SHAPE, NONE_STATE, NUM_ACTIONS, MIN_BATCH, LEARNING_RATE
 from cfg import LOSS_V, LOSS_ENTROPY, GAMMA_N, EPS_START, EPS_STOP, EPS_STEPS
@@ -81,13 +82,14 @@ class Brain():
         mov_sta = layers.Input( batch_shape=INPUT_SHAPE )
         conv = layers.Conv2D(8, (1,4), activation="relu")(mov_sta)
         flat = layers.Flatten()(conv)
+        dense5 = layers.Dense(8, activation = 'relu')(flat)
         
         # merge the first 2 branches 
         conc1 = layers.concatenate([dense1,dense2])
         dense3 = layers.Dense(4, activation='relu')(conc1)
         
         # then merge with the third
-        conc2 = layers.concatenate([dense3, flat])
+        conc2 = layers.concatenate([dense3, dense5])
         dense4 = layers.Dense(16, activation='relu')(conc2)
         
         # finally split into the 2 outputs (policy,value)
@@ -380,7 +382,7 @@ class Environment(threading.Thread):
                                   False,
                                   manager.path_list,
                                   3)
-                self.render_reward(R[0]) # print the current reward for car[0]
+#                self.render_reward(R[0]) # print the current reward for car[0]
                    
                 pygame.display.flip()
             
