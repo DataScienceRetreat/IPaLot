@@ -36,7 +36,7 @@ import keras.models as models
 import keras.layers as layers
 from keras import backend as K
 from cars.Group_handler import Car_handler
-#from keras.layers.advanced_activations import PReLU
+from keras.layers.advanced_activations import PReLU
 
 from cfg import INPUT_SHAPE, NONE_STATE, NUM_ACTIONS, MIN_BATCH, LEARNING_RATE
 from cfg import LOSS_V, LOSS_ENTROPY, GAMMA_N, EPS_START, EPS_STOP, EPS_STEPS
@@ -72,25 +72,31 @@ class Brain():
 
         # driving car input branch
         player = layers.Input( batch_shape=(None, 4) )
-        dense1 = layers.Dense(8, activation = 'relu')(player)
+#        dense1 = layers.Dense(8, activation = 'relu')(player)
+        dense1 = PReLU()( layers.Dense(8)(player) )
         
         # target position input branch
         target = layers.Input( batch_shape=(None, 4) )
-        dense2 = layers.Dense(8, activation = 'relu')(target)
+#        dense2 = layers.Dense(8, activation = 'relu')(target)
+        dense2 = PReLU()(layers.Dense(8)(target))
         
         # objects-to-avoid input branch
         mov_sta = layers.Input( batch_shape=INPUT_SHAPE )
-        conv = layers.Conv2D(8, (1,4), activation="relu")(mov_sta)
+#        conv = layers.Conv2D(8, (1,4), activation="relu")(mov_sta)
+        conv = PReLU()(layers.Conv2D(8, (1,4))(mov_sta))
         flat = layers.Flatten()(conv)
-        dense5 = layers.Dense(8, activation = 'relu')(flat)
+#        dense5 = layers.Dense(8, activation = 'relu')(flat)
+        dense5 = PReLU()(layers.Dense(8)(flat))
         
         # merge the first 2 branches 
         conc1 = layers.concatenate([dense1,dense2])
-        dense3 = layers.Dense(4, activation='relu')(conc1)
+#        dense3 = layers.Dense(4, activation='relu')(conc1)
+        dense3 = PReLU()(layers.Dense(4)(conc1))
         
         # then merge with the third
         conc2 = layers.concatenate([dense3, dense5])
-        dense4 = layers.Dense(16, activation='relu')(conc2)
+#        dense4 = layers.Dense(16, activation='relu')(conc2)
+        dense4 = PReLU()(layers.Dense(16)(conc2))
         
         # finally split into the 2 outputs (policy,value)
         policy = layers.Dense(NUM_ACTIONS, activation='softmax')(dense4)
