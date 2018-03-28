@@ -54,7 +54,7 @@ def main():
         e.start()
 
 # Then train for a fixed time
-    time.sleep(100)
+    time.sleep(60)
         
     for o in optimizers:
         o.stop()

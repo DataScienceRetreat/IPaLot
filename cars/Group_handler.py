@@ -25,7 +25,8 @@ import random
 import math
 import numpy as np
 
-from .cfg import FROM_BOTTOM, WIDTH, HEIGHT
+from .cfg import FROM_BOTTOM
+from cfg import WIDTH, HEIGHT
 
 class Car_handler():
     """

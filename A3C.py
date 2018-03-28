@@ -41,7 +41,8 @@ from keras.layers.advanced_activations import PReLU
 from cfg import INPUT_SHAPE, NONE_STATE, NUM_ACTIONS, MIN_BATCH, LEARNING_RATE
 from cfg import LOSS_V, LOSS_ENTROPY, GAMMA_N, EPS_START, EPS_STOP, EPS_STEPS
 from cfg import THREAD_DELAY, N_CARS, BACKGROUND_COLOR, WIDTH, HEIGHT, GAMMA
-from cfg import N_STEP_RETURN, MAX_FRAMES, EPOCHS_PER_SAVE
+from cfg import N_STEP_RETURN, MAX_FRAMES, EPOCHS_PER_SAVE, COLLISION_PENALTY
+from cfg import RMSP_DECAY
 
 #------------------------------------------------------------------------------
 class Brain():
@@ -73,34 +74,62 @@ class Brain():
         # driving car input branch
         player = layers.Input( batch_shape=(None, 4) )
 #        dense1 = layers.Dense(8, activation = 'relu')(player)
-        dense1 = PReLU()( layers.Dense(8)(player) )
+        dense1 = PReLU()(layers.Dense(
+                            8, kernel_initializer='random_uniform',
+                            bias_initializer='random_uniform'
+                            )(player)
+                        )
         
         # target position input branch
         target = layers.Input( batch_shape=(None, 4) )
 #        dense2 = layers.Dense(8, activation = 'relu')(target)
-        dense2 = PReLU()(layers.Dense(8)(target))
+        dense2 = PReLU()(layers.Dense(
+                            8, kernel_initializer='random_uniform',
+                            bias_initializer='random_uniform'
+                            )(target)
+                        )
         
         # objects-to-avoid input branch
         mov_sta = layers.Input( batch_shape=INPUT_SHAPE )
 #        conv = layers.Conv2D(8, (1,4), activation="relu")(mov_sta)
-        conv = PReLU()(layers.Conv2D(8, (1,4))(mov_sta))
+        conv = PReLU()(layers.Conv2D(
+                            8, (1,4), kernel_initializer='random_uniform',
+                            bias_initializer='random_uniform'
+                            )(mov_sta)
+                        )
         flat = layers.Flatten()(conv)
 #        dense5 = layers.Dense(8, activation = 'relu')(flat)
-        dense5 = PReLU()(layers.Dense(8)(flat))
+        dense5 = PReLU()(layers.Dense(
+                            8, kernel_initializer='random_uniform',
+                            bias_initializer='random_uniform'
+                            )(flat)
+                        )
         
         # merge the first 2 branches 
         conc1 = layers.concatenate([dense1,dense2])
 #        dense3 = layers.Dense(4, activation='relu')(conc1)
-        dense3 = PReLU()(layers.Dense(4)(conc1))
+        dense3 = PReLU()(layers.Dense(
+                            4, kernel_initializer='random_uniform',
+                            bias_initializer='random_uniform'
+                            )(conc1)
+                        )
         
         # then merge with the third
         conc2 = layers.concatenate([dense3, dense5])
 #        dense4 = layers.Dense(16, activation='relu')(conc2)
-        dense4 = PReLU()(layers.Dense(16)(conc2))
+        dense4 = PReLU()(layers.Dense(
+                            16, kernel_initializer='random_uniform',
+                            bias_initializer='random_uniform'
+                            )(conc2)
+                        )
         
         # finally split into the 2 outputs (policy,value)
-        policy = layers.Dense(NUM_ACTIONS, activation='softmax')(dense4)
-        value   = layers.Dense(1, activation='linear')(dense4)
+        policy = layers.Dense(NUM_ACTIONS, activation='softmax',
+                              kernel_initializer='random_uniform',
+                              bias_initializer='random_uniform')(dense4)
+        value   = layers.Dense(1, activation='linear', 
+                               kernel_initializer='random_uniform',
+                               bias_initializer='random_uniform')(dense4)
 
         model = models.Model(
                 inputs=[player, target, mov_sta],
@@ -130,15 +159,15 @@ class Brain():
                 )
         advantage = r_t - v
 
-        loss_policy = - log_prob * tf.stop_gradient(advantage)									# maximize policy
-        loss_value  = LOSS_V * tf.square(advantage)												# minimize value error
+        loss_policy = - log_prob * tf.stop_gradient(advantage) #maximize policy
+        loss_value  = LOSS_V * tf.square(advantage) # minimize value error
         entropy = LOSS_ENTROPY * tf.reduce_sum(
                 p * tf.log(p + 1e-10), axis=1, keep_dims=True
                 )	# maximize entropy (regularization)
 
         loss_total = tf.reduce_mean(loss_policy + loss_value + entropy)
 
-        optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE, decay=.99)
+        optimizer = tf.train.RMSPropOptimizer(LEARNING_RATE, decay=RMSP_DECAY)
         minimize = optimizer.minimize(loss_total)
 
         return s1_t, s2_t, s3_t, a_t, r_t, minimize
@@ -325,6 +354,7 @@ class Environment(threading.Thread):
             # now wait for all agents to do their job
             for agent in agents:
                 agent.join()
+                
 
             for i, car in enumerate(manager.moving_cars):                
                 # check for collisions for each car that is not done
@@ -348,8 +378,8 @@ class Environment(threading.Thread):
                         collision = False
                         
                     if collision:
-                        rewards[i] = 0
-                        # so that the updated R will show last potential
+                        rewards[i] = COLLISION_PENALTY
+                        # penalize collisions
                         
                         terminal_flags[i] = True
                         done = True # stop the episode even for 1 collision
@@ -374,7 +404,9 @@ class Environment(threading.Thread):
             states = new_states
             
             for i in range(N_CARS):
-                R[i] += rewards[i]
+                if not terminal_flags[i]:
+                # so that the updated R will show potential before a collision
+                    R[i] += rewards[i]
             
             if self.render and frame%10 == 0:
                 background = pygame.Surface(self.screen.get_size())
@@ -512,10 +544,12 @@ class Agent(threading.Thread):
             p = self.brain.predict_p(s)[0]
                 # the [0] is once again just for shape reasons
 
-            a = np.random.choice(NUM_ACTIONS, p=p)
-                # for mathematicians
-            # a = np.argmax(p)
-                # other kind of nerd
+            if self.epsilon > 1e-10:
+                a = np.random.choice(NUM_ACTIONS, p=p)
+            else:
+            # make a greedy environment fully deterministic
+                a = np.argmax(p)
+#            print(self.i, s[0][0], a, flush=True)
         
         # act and save action in the list for external access
         self.car.act(a)
