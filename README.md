@@ -23,4 +23,4 @@ and uses the accumulated experience to train the same neural network used in the
 * **python A_star_pretrain.py**  -- runs the pretraing based on A\* search
 * **python main.py**  --  runs the A3C training simulation ( hyperparameters tuning can be performed changing the variables in cfg.py)
 
-![game_image](images/a3c_4cars.png)
+![game_image](https://github.com/orla84/IPaLot/blob/master/images/a3c_4cars.PNG)
