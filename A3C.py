@@ -560,11 +560,9 @@ class Agent(threading.Thread):
             else:
             # make a greedy environment fully deterministic
                 a = np.argmax(p)
-#                print(p, a, flush=True)
         
         # act and save action in the list for external access
-        for _ in range(5):
-            self.car.act(a)
+        self.car.act(a)
         self.action_list[self.i] = a
         
         # finally get the distance-based reward            

@@ -366,8 +366,7 @@ class Filled_Lot():
 #            # here in pretraining also set an intermediate target to help
 #            # convergence for the vertical parking case
 #            t_next = ( (t[0][0], t[0][1] + 1.5*car.rect.h),
-#                       (t[1][0] -round(car.wheelbase),
-#                        t[0][1] + 1.5*car.rect.h )
+#                       (t[1][0], t[1][1] + 1.5*car.rect.h )
 #                      )
 #            target_list.append(t_next) 
     

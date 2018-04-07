@@ -25,7 +25,9 @@ structure of the code and of the architecture of the
 
 #### Running
 
-* **python A_star_pretrain.py**  -- runs the pretraing based on A\* search
+* **python A_star_pretrain.py**  -- runs the pretraing based on A\* search (takes long time)
+* **python A_star_pretrain.py --test** pretrains with the first parking only for testing (1 minute)
 * **python main.py**  --  runs the A3C training simulation ( hyperparameters tuning can be performed changing the variables in cfg.py)
+
 
 ![game_image](https://github.com/orla84/IPaLot/blob/master/images/a3c_4cars.PNG)

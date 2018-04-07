@@ -16,6 +16,7 @@ from pretrain_classes.A3C_objects import Brain, get_current_reward, memory_push
 from pretrain_classes.A_star_objects import Priority_queue, Vertex
 from pygame.locals import QUIT
 import numpy as np
+import sys
 
 # each car will act several times per each step of the loop   
 consecutive_actions = 20
@@ -78,20 +79,27 @@ def main():
     background.fill(color)
     screen.blit(background, (0, 0))
     pygame.display.flip()
-#    pygame.font.init()
 
 # Initialise brain
     brain = Brain()
 
-# Perform a A* for a path to the parking spot from each of N_START
+# Now perform a A* for a path to the parking spot from each of N_START
 # positions to each of the possible parking spots, accumulating s,a,r,s'
 # in memory at the end of each episode.
 # Once all the possible A* searches are done train
 # the brain (Note lenght-1 lists/loops in the following are the result
 # of reusing code written for the multi-agent A3C case)
 
-    N_SPOTS = 1 #18 # number of parking spots
-    N_STARTS = 1 #5 # number of starting positions
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '--test':
+            N_SPOTS = 1 # number of parking spots, max 18
+            N_STARTS = 1 #5 # number of starting positions
+        else:
+            N_SPOTS = 18 # number of parking spots, max 18
+            N_STARTS = 5 # number of starting positions
+    else:
+        N_SPOTS = 18 # number of parking spots, max 18
+        N_STARTS = 5 # number of starting positions
 
     N_CARS = 1 # do not change this
     
@@ -103,10 +111,19 @@ def main():
             # start an episode
             manager = Car_handler(N_CARS, i_spot, i_start, N_STARTS)
             car = manager.moving_cars[0]
+
+            first = True # flag for testing
                 
             # do a search for each of the target positions
-#            while manager.target_positions[0]:
-            if manager.target_positions[0]:
+            while manager.target_positions[0]:
+                
+                # this block is for testing only
+                if not first:
+                    break
+                if len(sys.argv) > 1:
+                    if sys.argv[1] == '--test':
+                        first = False
+                
                 target = manager.target_positions[0].pop()
                 if manager.current_target:
                     manager.current_target[0]= target
@@ -199,13 +216,7 @@ def main():
                     for a in range(NUM_ACTIONS):
                         for _ in range(consecutive_actions): 
                             car.act(a)
-                            
-    #                    manager.moving_cars_group.draw(screen)
-    #                    pygame.display.flip()
-    #                    time.sleep(1)
-                            
-    #                    one_hot_action = np.zeros(NUM_ACTIONS)
-    #                    one_hot_action[a] = 1.0
+
                         
                         collision = False       
                         if car.rect.left < 0 or car.rect.right > WIDTH:
