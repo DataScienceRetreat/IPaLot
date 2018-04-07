@@ -12,6 +12,11 @@ avalaible [here](https://github.com/jaara/AI-blog/blob/master/CartPole-A3C.py).
 A pretraining program, based on an A\* search, is also included: it finds optimal paths to/from parking spots for a car,
 and uses the accumulated experience to train the same neural network used in the main program.
 
+Check the linked images here for a description of the
+[threaded](https://github.com/orla84/IPaLot/blob/master/images/threads.png)
+structure of the code and of the architecture of the 
+[neural network](https://github.com/orla84/IPaLot/blob/master/images/Brain.png)
+
 #### Installing (conda virtual environment)
 
 * conda create --name myenv python=3.6.3
