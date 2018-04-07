@@ -10,7 +10,7 @@ The training method used is a multi-agent version of the [A3C model](https://arx
 based on the [implementation](https://jaromiru.com/2017/03/26/lets-make-an-a3c-implementation/) by Jaromír Janisch
 avalaible [here](https://github.com/jaara/AI-blog/blob/master/CartPole-A3C.py).
 A pretraining program, based on an A\* search, is also included: it finds optimal paths to/from parking spots for a car,
-and uses the accumulated experience to train the same neural network used in the main program,
+and uses the accumulated experience to train the same neural network used in the main program.
 
 #### Installing (conda virtual environment)
 
