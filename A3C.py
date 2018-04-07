@@ -63,9 +63,13 @@ class Brain():
         self.graph = self._build_graph(self.model)
 
         self.session.run(tf.global_variables_initializer())
+        if self.load_weights:
+            self.model.load_weights('weights/pretrain_weights.h5')
+#            model.load_weights('weights/brain_weights.h5') 
+        
         self.default_graph = tf.get_default_graph()
 
-        self.default_graph.finalize()	# avoid modifications
+#        self.default_graph.finalize()	# avoid modifications
 
     def _build_model(self):
         ''' The model has 3 inputs as defined in the get_states method
@@ -136,10 +140,7 @@ class Brain():
                 outputs=[policy, value]
                 )
         model._make_predict_function()	# have to initialize before threading
-        
-        if self.load_weights:
-            model.load_weights('weights/brain_weights.h5')
-        
+               
         model.summary()
 
         return model
@@ -199,8 +200,8 @@ class Brain():
 
         s_mask = np.vstack(s_mask)
 
-        if len(s) > 5*MIN_BATCH:
-            print("Optimizer alert! Minimizing batch of %d" % len(s))
+#        if len(s) > 5*MIN_BATCH:
+#            print("Optimizer alert! Minimizing batch of %d" % len(s))
 
         v = self.predict_v(s_)
         r = r + GAMMA_N * v * s_mask	# set v to 0 where s_ is terminal state
@@ -212,7 +213,7 @@ class Brain():
         with self.lock_queue:
             self.counter += 1
             if (self.counter % EPOCHS_PER_SAVE) == 0:
-                self.model.save('weights/brain_weights.h5')
+                self.model.save_weights('weights/brain_weights.h5')
                 filename = 'weights/weights_' + str(
                         self.counter) + '_' + time.strftime(
                                 "%m_%d_%H-%M-%S", time.gmtime()) + '.h5'
@@ -226,12 +227,12 @@ class Brain():
             self.train_queue[1].append(a)
             self.train_queue[2].append(r)
 
-        if s_ is None:
-            self.train_queue[3].append(NONE_STATE)
-            self.train_queue[4].append(0.)
-        else:
-            self.train_queue[3].append(s_)
-            self.train_queue[4].append(1.)
+            if s_ is None:
+                self.train_queue[3].append(NONE_STATE)
+                self.train_queue[4].append(0.)
+            else:
+                self.train_queue[3].append(s_)
+                self.train_queue[4].append(1.)
 
     def predict(self, s):
         with self.default_graph.as_default():
@@ -260,8 +261,12 @@ class Optimizer(threading.Thread):
 
     def run(self):
         while not self.stop_signal:
-            self.brain.optimize()
-
+            try:
+                self.brain.optimize()
+            except:
+                print("# Warning: optimizer failed")
+            # do not screw up a night worth of training if it fails once
+                
     def stop(self):
         self.stop_signal = True
         
@@ -300,8 +305,8 @@ class Environment(threading.Thread):
     def runEpisode(self): 
         manager = Car_handler(N_CARS)
 
-        not_terminal = [False]*N_CARS
-        states = manager.get_states(not_terminal)
+        terminal = [False]*N_CARS
+        states = manager.get_states(terminal)
         self.stop_training = []
         self.tot_rewards = []
         manager.last_distances = []
@@ -426,6 +431,12 @@ class Environment(threading.Thread):
             
             frame += 1
             
+            #check if all cars are done if nothing has already triggered done
+            if not done:
+                done = True
+                for i in range(N_CARS):
+                    done = done and manager.car_is_done[i]
+            
             if done or self.stop_signal or frame > MAX_FRAMES:
                break
         
@@ -549,10 +560,11 @@ class Agent(threading.Thread):
             else:
             # make a greedy environment fully deterministic
                 a = np.argmax(p)
-#            print(self.i, s[0][0], a, flush=True)
+#                print(p, a, flush=True)
         
         # act and save action in the list for external access
-        self.car.act(a)
+        for _ in range(5):
+            self.car.act(a)
         self.action_list[self.i] = a
         
         # finally get the distance-based reward            

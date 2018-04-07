@@ -6,12 +6,15 @@ Created on Sat Mar 17 10:30:44 2018
 
 """
 
+# training time in seconds
+TRAINING_TIME = 3600*8
+
 # number of moving cars per episode
-N_CARS = 2
+N_CARS = 4
 
 # number of threads
 OPTIMIZERS = 3
-ENVIRONMENTS = 4
+ENVIRONMENTS = 8
 
 #-- constants for A3C
 import numpy as np
@@ -23,18 +26,18 @@ is where the total number of cars 29+1 comes from'''
 
 COLLISION_PENALTY = 0.2
 
-NUM_ACTIONS=7
+NUM_ACTIONS=7 # do not change
 
 MIN_BATCH = 128
-LEARNING_RATE = 5e-2
-RMSP_DECAY = 0.7
+LEARNING_RATE = 5e-4
+RMSP_DECAY = 0.9
 
 LOSS_V = 0.5			# v loss coefficient
 LOSS_ENTROPY = 0.1 	# entropy coefficient
 
-GAMMA = 0.99
+GAMMA = 0.999
 
-N_STEP_RETURN = 8
+N_STEP_RETURN = 10
 GAMMA_N = GAMMA ** N_STEP_RETURN
 
 EPS_START = 0.8

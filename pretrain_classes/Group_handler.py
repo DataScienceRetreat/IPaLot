@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Mar 5 13:54:37 2018
+Created on Mon Apr 1 18:05:00 2018
 @author: Orlando Ciricosta
+
+A modified version of the manager used by main, adapted for use by
+A_star_pretrain
 
 class Car_handler(n):
     returns n moving cars, each having a stack of target positions and a
@@ -20,12 +23,11 @@ class Filled_Lot(car_group):
 """
 
 import pygame
-from .Cars import Car, Static_car
-import random
+from cars.Cars import Car, Static_car
 import math
 import numpy as np
 
-from .cfg import FROM_BOTTOM
+from cars.cfg import FROM_BOTTOM
 from cfg import WIDTH, HEIGHT
 
 class Car_handler():
@@ -39,9 +41,11 @@ class Car_handler():
                                     initial target]
         
     """  
-    def __init__(self, n):
+    def __init__(self, n, i_spot, i_start, N_STARTS):
         
         self.number_of_cars = n
+        self.N = N_STARTS
+        self.i_start = i_start
         self.moving_cars = []
         self.collide_with = []
         self.target_positions = []  # list of stacks of target positions
@@ -50,7 +54,7 @@ class Car_handler():
         self.current_origin = [] # and target point for each car
         self.car_is_done = [] # will stop updates on the car for the episode
         
-        self.last_distances = [] # save last distances from target
+        self.last_distances = [[0,0]] # save last distances from target
 
         self.static_cars_group = pygame.sprite.Group()
         self.moving_cars_group = pygame.sprite.Group()
@@ -68,7 +72,9 @@ class Car_handler():
         # create the target parking spots (get_spot in the following loop)
         # and add the remaining static cars to the sprite group for
         # collision/rendering
-        index = random.sample(range(len(self.lot.static_cars_list)), n)
+
+#        index = random.sample(range(len(self.lot.static_cars_list)), n)
+        index = [i_spot,]
         for i in range(len(self.lot.static_cars_list)):
             if i not in index:
                 self.static_cars_group.add( self.lot.static_cars_list[i] )
@@ -79,9 +85,9 @@ class Car_handler():
             self.car_is_done.append(False)
             # cars will be at bottom of screen
             car_position = (
-                    (i+1) * pygame.display.Info().current_w // (n+1),
-                    - pygame.display.Info().current_h + FROM_BOTTOM
-                    )
+                (i_start+1) * pygame.display.Info().current_w // (N_STARTS+1),
+                - pygame.display.Info().current_h + FROM_BOTTOM
+                )
             self.current_origin.append(car_position)
             self.moving_cars.append( Car(pos=car_position) )
             self.collide_with.append(pygame.sprite.Group())
@@ -91,7 +97,7 @@ class Car_handler():
             
             # create parking spot and save target positions
             self.lot.get_spot(car, index[i], self.target_positions[i])
-            self.current_target.append(self.target_positions[i].pop())
+#            self.current_target.append(self.target_positions[i].pop())
 
             self.const.append([1,1]) # init for reward constants
             
@@ -104,7 +110,7 @@ class Car_handler():
                     
     def reset_car(self, i):
         self.moving_cars[i].reset(pos=(
-            (i+1) * pygame.display.Info().current_w // (self.number_of_cars+1),
+            (self.i_start+1) * pygame.display.Info().current_w // (self.N+1),
             - pygame.display.Info().current_h + FROM_BOTTOM)
             )
                 
@@ -153,16 +159,16 @@ class Car_handler():
             image_mov_sta = np.expand_dims(np.array(mov_sta), axis = 2)
             # this adds a channel dimension to the end of shape (for convnet)
             
-            dist1 = self.get_distance(fwp,fwt)
-            dist2 = self.get_distance(rwp,rwt)
-            if ( dist1 <= 5 ) and ( dist2 <= 5 ):
-                terminal_flags[i] = True
-                if self.target_positions[i]: # if there are new targets left
-                    self.current_target[i] = self.target_positions[i].pop()
-                    self.last_distances[i] = []
-                else:
-                    self.car_is_done[i] = True
-                    self.remove_car(i)
+#            dist1 = self.get_distance(fwp,fwt)
+#            dist2 = self.get_distance(rwp,rwt)
+#            if ( dist1 <= 5 ) and ( dist2 <= 5 ):
+#                terminal_flags[i] = True
+#                if self.target_positions[i]: # if there are new targets left
+#                    self.current_target[i] = self.target_positions[i].pop()
+#                    self.last_distances[i] = []
+#                else:
+#                    self.car_is_done[i] = True
+#                    self.remove_car(i)
             
             states[i].append(player)
             states[i].append(target)            
@@ -290,8 +296,14 @@ class Filled_Lot():
             self.static_cars_list.append(car1)
             self.static_cars_list.append(car2)
             if i == n-1:
-                self.A = car1.rect.bottomright
-                self.D = car2.rect.bottomleft
+                self.A = [0,0] 
+                self.A[0] = car1.rect.bottomright[0] + w
+                self.A[1] = car1.rect.bottomright[1] + w
+                
+                self.D = [0,0]
+                self.D[0] = car2.rect.bottomleft[0] - w
+                self.D[1] = car2.rect.bottomleft[1] + w
+                
             # then for the upper row, with horizontal cars
             dx += delta
             if i%2 == 0:
@@ -301,10 +313,16 @@ class Filled_Lot():
                 self.static_cars_list.append(car2)            
             dx += delta
             if i == n-2:
-                self.B = car1.rect.bottomright
-                self.C = car2.rect.bottomleft   # note: bottom is intentional
-                                                # so that upper spots are in
-                                                # zone 2
+                self.B = [0,0]
+                self.B[0] = car1.rect.bottomright[0] + w
+                self.B[1] = car1.rect.bottomright[1]
+                
+                self.C = [0,0]
+                self.C[0] = car2.rect.bottomleft[0] - w
+                self.C[1] = car2.rect.bottomleft[1]
+                                  # note: bottom is intentional
+                                  # so that upper spots are in
+                                  # zone 2
             
             
     def get_spot(self, car, index, target_list):
@@ -331,12 +349,27 @@ class Filled_Lot():
             t_next = ( (t[0][0] - dx, t[0][1] - dy),
                        (t[1][0] - dx, t[1][1] - dy) )
             target_list.append(t_next)
+#        else:
+#            # here in pretraining also set an intermediate target to help
+#            # convergence for the vertical parking case
+#            t_next = ( (t[0][0], t[0][1] + 1.5*car.rect.h),
+#                       (t[1][0], t[1][1] + 1.5*car.rect.h )
+#                      )
+#            target_list.append(t_next)         
+            
             
         target_list.append(t)
         
         if not spot.is_vertical:       
             target_list.append(t_next)
-    
+#        else:
+#            # here in pretraining also set an intermediate target to help
+#            # convergence for the vertical parking case
+#            t_next = ( (t[0][0], t[0][1] + 1.5*car.rect.h),
+#                       (t[1][0] -round(car.wheelbase),
+#                        t[0][1] + 1.5*car.rect.h )
+#                      )
+#            target_list.append(t_next) 
     
     
     
